@@ -546,7 +546,8 @@ def check_auth():
         return jsonify({'status': 'waiting'})
     except Exception as e:
         print(f"Check Auth Error: {e}")
-        return jsonify({'status': 'error', 'message': 'auth_check_failed'}), 500
+        # Keep polling stable even if DB is temporarily unreachable.
+        return jsonify({'status': 'waiting', 'message': 'auth_check_unavailable'})
     finally:
         if conn:
             conn.close()
