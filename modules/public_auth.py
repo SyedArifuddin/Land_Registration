@@ -1,6 +1,6 @@
+from psycopg2.extras import RealDictCursor
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-import mysql.connector
-from auth import db_config
+from auth import db_config, connect_db
 from blockchain_config import land_chain
 
 citizen_bp = Blueprint('citizen', __name__)
@@ -11,7 +11,7 @@ def signup():
         user = request.form.get('username')
         pw = request.form.get('password')
         try:
-            conn = mysql.connector.connect(**db_config)
+            conn = connect_db()
             cursor = conn.cursor()
             # SAVES TO DB: Creates a new public user
             cursor.execute('INSERT INTO users (username, password, role) VALUES (%s, %s, %s)', (user, pw, 'citizen'))
@@ -19,7 +19,7 @@ def signup():
             conn.close()
             flash("Account created! Please Sign In.")
             return redirect(url_for('citizen.login'))
-        except mysql.connector.Error:
+        except Exception:
             flash("Username already exists.")
     return render_template('public_auth.html', mode='signup')
 
@@ -28,8 +28,8 @@ def login():
     if request.method == 'POST':
         user = request.form.get('username')
         pw = request.form.get('password')
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         # Verify credentials for public users only
         cursor.execute('SELECT * FROM users WHERE username=%s AND password=%s AND role=%s', (user, pw, 'citizen'))
         account = cursor.fetchone()

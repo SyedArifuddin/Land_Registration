@@ -13,18 +13,19 @@ This repository contains a Flask-based land registration application.
 ### Environment variables
 Set these in Vercel dashboard before deployment:
 
-- `DATABASE_URL` — full MySQL connection string, e.g. `mysql://user:pass@host:3306/dbname`
+- `DATABASE_URL` — full PostgreSQL connection string, e.g. `postgresql://user:pass@host:5432/dbname`
 - or separately:
   - `DB_HOST`
   - `DB_USER`
   - `DB_PASSWORD`
   - `DB_NAME`
   - `DB_PORT`
+  - `DB_SSLMODE`
 
 ### Notes
-- The app uses MySQL and `mysql-connector-python`.
+- The app uses PostgreSQL and `psycopg2-binary`.
 - `templates/` and `static/` are served by Flask from the deployed package.
-- Local files such as `registry.db`, `passwords.txt`, and `users.json` are excluded from deployment.
+- Local files such as `passwords.txt` and `users.json` are excluded from deployment.
 
 ### Deploy steps
 1. Install Vercel CLI: `npm i -g vercel`

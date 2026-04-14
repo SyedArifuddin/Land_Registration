@@ -1,6 +1,6 @@
+from psycopg2.extras import RealDictCursor
 from flask import Blueprint, render_template, session, redirect, url_for, flash, make_response, request
-import mysql.connector
-from auth import db_config
+from auth import db_config, connect_db
 from blockchain_config import land_chain
 from fpdf import FPDF
 
@@ -16,14 +16,14 @@ def index():
     final_deeds  = []
 
     try:
-        conn   = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn   = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         # Query using ACTUAL column names — no officer filter since column doesn't exist
         if search_query:
             cursor.execute("""
                 SELECT * FROM land_records
-                WHERE survey_no LIKE %s OR owner_name LIKE %s
+                WHERE survey_no LIKE %s OR pattadar LIKE %s
                 ORDER BY id DESC
             """, (f"%{search_query}%", f"%{search_query}%"))
         else:
@@ -33,8 +33,7 @@ def index():
         conn.close()
 
         for rec in db_records:
-            # Find matching blockchain block for this record
-            block_hash = rec.get('property_hash', 'DB_STORED')
+            block_hash = rec.get('block_hash', '') or rec.get('property_hash', 'DB_STORED')
             for block in land_chain.chain:
                 data = block.get('data', {})
                 if (str(data.get('land_id', '')) == str(rec.get('survey_no', '')) or
@@ -44,9 +43,9 @@ def index():
 
             final_deeds.append({
                 'survey_id':  rec.get('survey_no',    'N/A'),
-                'owner':      rec.get('owner_name',   'N/A'),
-                'district':   rec.get('location_name','N/A'),
-                'area':       rec.get('area_sqft',    '0'),
+                'owner':      rec.get('pattadar',      rec.get('owner_name', 'N/A')),
+                'district':   rec.get('location',      rec.get('location_name', 'N/A')),
+                'area':       rec.get('extent',        rec.get('area_sqft', '0')),
                 'category':   rec.get('land_category','General'),
                 'status':     'VERIFIED',
                 'block_hash': block_hash or 'PENDING',
@@ -69,8 +68,8 @@ def view_deed(survey_id):
     deed  = None
     proof = None
     try:
-        conn   = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn   = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM land_records WHERE survey_no=%s", (survey_id,))
         deed = cursor.fetchone()
         conn.close()
@@ -78,7 +77,6 @@ def view_deed(survey_id):
         flash(f"DB Error: {e}")
         return redirect(url_for('vault.index'))
 
-    # Find blockchain proof
     for block in land_chain.chain:
         data = block.get('data', {})
         if (str(data.get('land_id', '')) == str(survey_id) or
@@ -96,8 +94,8 @@ def generate_pdf(survey_id):
 
     deed = None
     try:
-        conn   = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn   = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM land_records WHERE survey_no=%s", (survey_id,))
         deed = cursor.fetchone()
         conn.close()
@@ -107,8 +105,7 @@ def generate_pdf(survey_id):
     if not deed:
         return "Record not found", 404
 
-    # Find block hash
-    block_hash = deed.get('property_hash', 'N/A')
+    block_hash = deed.get('block_hash', '') or deed.get('property_hash', 'N/A')
     for block in land_chain.chain:
         data = block.get('data', {})
         if str(data.get('land_id', '')) == str(survey_id):
@@ -128,9 +125,9 @@ def generate_pdf(survey_id):
     pdf.ln(8)
     pdf.set_font("Arial", '', 12)
     pdf.cell(0, 8, f"Survey No.     : {deed.get('survey_no',    'N/A')}", ln=True)
-    pdf.cell(0, 8, f"Pattadar Name  : {deed.get('owner_name',   'N/A')}", ln=True)
-    pdf.cell(0, 8, f"District       : {deed.get('location_name','N/A')}", ln=True)
-    pdf.cell(0, 8, f"Area (sq.ft)   : {deed.get('area_sqft',    '0')}", ln=True)
+    pdf.cell(0, 8, f"Pattadar Name  : {deed.get('pattadar',      deed.get('owner_name', 'N/A'))}", ln=True)
+    pdf.cell(0, 8, f"District       : {deed.get('location',      deed.get('location_name','N/A'))}", ln=True)
+    pdf.cell(0, 8, f"Area (sq.ft)   : {deed.get('extent',        deed.get('area_sqft','0'))}", ln=True)
     pdf.cell(0, 8, f"Land Category  : {deed.get('land_category','General')}", ln=True)
     pdf.ln(6)
     pdf.set_font("Arial", 'B', 10)
@@ -155,12 +152,12 @@ def export_full_registry():
     search_query = request.args.get('search', '').strip()
     records = []
     try:
-        conn   = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn   = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         if search_query:
             cursor.execute("""
                 SELECT * FROM land_records
-                WHERE survey_no LIKE %s OR owner_name LIKE %s
+                WHERE survey_no LIKE %s OR pattadar LIKE %s
                 ORDER BY id ASC
             """, (f"%{search_query}%", f"%{search_query}%"))
         else:
@@ -195,9 +192,9 @@ def export_full_registry():
         pdf.set_fill_color(245, 245, 245)
         pdf.cell(20, 7, str(i),                              border=1, fill=fill)
         pdf.cell(35, 7, str(row.get('survey_no',    '')),   border=1, fill=fill)
-        pdf.cell(55, 7, str(row.get('owner_name',   ''))[:25], border=1, fill=fill)
-        pdf.cell(45, 7, str(row.get('location_name',''))[:20], border=1, fill=fill)
-        pdf.cell(35, 7, str(row.get('area_sqft',    '')),   border=1, ln=True, fill=fill)
+        pdf.cell(55, 7, str(row.get('pattadar',      row.get('owner_name', '')) )[:25], border=1, fill=fill)
+        pdf.cell(45, 7, str(row.get('location',      row.get('location_name', '')) )[:20], border=1, fill=fill)
+        pdf.cell(35, 7, str(row.get('extent',       row.get('area_sqft',    '')))  , border=1, ln=True, fill=fill)
 
     response = make_response(pdf.output(dest='S').encode('latin-1'))
     response.headers.set('Content-Disposition', 'attachment', filename='Full_Registry.pdf')

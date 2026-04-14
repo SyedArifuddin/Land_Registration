@@ -1,7 +1,7 @@
+from psycopg2.extras import RealDictCursor
 from flask import Blueprint, render_template, session, redirect, url_for
-import mysql.connector
 import random
-from auth import db_config
+from auth import db_config, connect_db
 from blockchain_config import land_chain
 
 health_bp = Blueprint('health', __name__, url_prefix='/features/health')
@@ -10,8 +10,8 @@ def get_live_node_status():
     """Retrieves node data from DB with simulated live latency."""
     nodes = []
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM network_nodes")
         nodes = cursor.fetchall()
         

@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
-from auth import init_db, db_config, is_device_registered
+from auth import init_db, db_config, is_device_registered, connect_db
 from blockchain_config import land_chain
-import mysql.connector
 import socket
 import datetime
 import random
+from psycopg2.extras import RealDictCursor
 
 # --- IMPORT BLUEPRINTS ---
 from modules.inscription import inscription_bp
@@ -33,7 +33,7 @@ app.register_blueprint(citizen_bp)
 def get_system_context():
     node_count = 3
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM network_nodes")
         res = cursor.fetchone()
@@ -83,7 +83,7 @@ def signup():
         user = request.form.get('username')
         pw   = request.form.get('password')
         try:
-            conn = mysql.connector.connect(**db_config)
+            conn = connect_db()
             cursor = conn.cursor()
             cursor.execute(
                 'INSERT INTO users (username, password, role) VALUES (%s, %s, %s)',
@@ -93,7 +93,7 @@ def signup():
             conn.close()
             flash("Account created! Please Sign In.")
             return redirect(url_for('login_gate', role='admin'))
-        except mysql.connector.Error:
+        except Exception:
             flash("Error: Username already exists.")
     return render_template('login.html', mode='signup')
 
@@ -103,7 +103,7 @@ def login_gate():
     if request.method == 'GET':
         session.clear()
         try:
-            conn = mysql.connector.connect(**db_config)
+            conn = connect_db()
             cursor = conn.cursor()
             cursor.execute(
                 "UPDATE qr_sync SET status='waiting', authenticated_user=NULL WHERE id=1"
@@ -116,8 +116,8 @@ def login_gate():
     if request.method == 'POST':
         user = request.form.get('username')
         pw   = request.form.get('password')
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(
             'SELECT * FROM users WHERE username=%s AND password=%s AND role=%s',
             (user, pw, 'admin')
@@ -154,8 +154,8 @@ def registered_citizens():
     if 'user' not in session or session.get('role') != 'admin':
         return redirect(url_for('login_gate', role='admin'))
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # All citizens
     cursor.execute("SELECT id, username FROM users WHERE role='citizen' ORDER BY id DESC")
@@ -195,8 +195,8 @@ def reports():
     if 'user' not in session or session.get('role') != 'admin':
         return redirect(url_for('login_gate', role='admin'))
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # Total citizens
     cursor.execute("SELECT COUNT(*) as cnt FROM users WHERE role='citizen'")
@@ -255,7 +255,7 @@ def reports():
             LEFT JOIN users u ON tr.assigned_admin_id = u.id
             ORDER BY tr.id DESC LIMIT 10
         """)
-    except mysql.connector.Error:
+    except Exception:
         # Column assigned_admin_id missing — fetch without the join
         cursor.execute("SELECT * FROM transfer_requests ORDER BY id DESC LIMIT 10")
     recent_transfers = cursor.fetchall()
@@ -292,8 +292,8 @@ def manage_requests():
     if 'user' not in session or session.get('role') != 'admin':
         return redirect(url_for('login_gate', role='admin'))
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     cursor.execute("SELECT id FROM users WHERE username=%s", (session.get('user'),))
     admin_data = cursor.fetchone()
@@ -321,8 +321,8 @@ def approve_handshake():
         return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
 
     request_id = request.form.get('request_id')
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT * FROM transfer_requests WHERE id=%s", (request_id,))
     req = cursor.fetchone()
 
@@ -372,8 +372,8 @@ def reject_handshake():
     request_id = request.form.get('request_id')
     reason     = request.form.get('reason', 'No reason provided.')
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT * FROM transfer_requests WHERE id=%s", (request_id,))
     req = cursor.fetchone()
 
@@ -410,8 +410,8 @@ def admin_send_message():
     if not request_id or not message:
         return jsonify({'status': 'error', 'message': 'Missing fields.'}), 400
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT sender FROM transfer_requests WHERE id=%s", (request_id,))
     req = cursor.fetchone()
 
@@ -442,8 +442,8 @@ def admin_notifications():
         return jsonify({'status': 'error'}), 401
 
     username = session.get('user')
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("""
         SELECT * FROM notifications
         WHERE recipient=%s AND role='admin'
@@ -465,8 +465,8 @@ def admin_unread_count():
     if 'user' not in session or session.get('role') != 'admin':
         return jsonify({'count': 0})
     username = session.get('user')
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("""
         SELECT COUNT(*) as cnt FROM notifications
         WHERE recipient=%s AND role='admin' AND is_read=0
@@ -482,8 +482,8 @@ def approve_transfer(request_id):
     if 'user' not in session or session.get('role') != 'admin':
         return jsonify({'status': 'unauthorized'}), 403
 
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT * FROM transfer_requests WHERE id=%s", (request_id,))
     req = cursor.fetchone()
     if req:
@@ -509,7 +509,7 @@ def resolve_dispute(dispute_id):
         return jsonify({'status': 'unauthorized'}), 403
 
     action = request.form.get('action')
-    conn = mysql.connector.connect(**db_config)
+    conn = connect_db()
     cursor = conn.cursor()
     cursor.execute(
         "UPDATE disputes SET status=%s WHERE id=%s",
@@ -524,8 +524,8 @@ def resolve_dispute(dispute_id):
 
 @app.route('/check_auth')
 def check_auth():
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT status, authenticated_user FROM qr_sync WHERE id=1")
     row = cursor.fetchone()
     conn.close()
@@ -540,8 +540,8 @@ def scan_endpoint(device_id):
     if request.method == 'POST':
         user = request.form.get('username')
         pw   = request.form.get('password')
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(
             'SELECT * FROM users WHERE username=%s AND password=%s AND role=%s',
             (user, pw, 'admin')

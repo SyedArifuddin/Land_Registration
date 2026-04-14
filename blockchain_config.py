@@ -1,15 +1,15 @@
+from psycopg2.extras import RealDictCursor
 # Updated to import from the correct filename 'blockchain'
 from blockchain import Blockchain 
-import mysql.connector
-from auth import db_config
+from auth import db_config, connect_db
 
 land_chain = Blockchain()
 
 # IMPORTANT: This helper ensures the 'chain' is not empty on startup
 def sync_chain_from_db():
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         # Fetch your stored records (inscriptions, etc.)
         cursor.execute("SELECT * FROM land_records") 
         records = cursor.fetchall()

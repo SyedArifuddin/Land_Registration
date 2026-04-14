@@ -1,6 +1,6 @@
+from psycopg2.extras import RealDictCursor
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, flash
-import mysql.connector
-from auth import db_config
+from auth import db_config, connect_db
 from blockchain_config import land_chain
 import datetime
 import hashlib
@@ -10,7 +10,7 @@ citizen_bp = Blueprint('citizen', __name__, url_prefix='/citizen')
 
 def log_telemetry(event, detail):
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO network_telemetry (event_type, data_value) VALUES (%s,%s)", (event, detail))
         conn.commit(); conn.close()
@@ -18,29 +18,11 @@ def log_telemetry(event, detail):
 
 def notify(recipient, role, message):
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO notifications (recipient,role,message) VALUES (%s,%s,%s)", (recipient,role,message))
         conn.commit(); conn.close()
     except: pass
-
-def ensure_tables():
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS notifications (
-            id INT AUTO_INCREMENT PRIMARY KEY, recipient VARCHAR(255),
-            role VARCHAR(50), message TEXT, is_read TINYINT DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-        cursor.execute('''CREATE TABLE IF NOT EXISTS admin_messages (
-            id INT AUTO_INCREMENT PRIMARY KEY, request_id INT,
-            from_admin VARCHAR(255), to_citizen VARCHAR(255),
-            message TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-        conn.commit(); conn.close()
-    except Exception as e:
-        print(f"Table Error: {e}")
-
-ensure_tables()
 
 # ─── AUTH ──────────────────────────────────────────────────────
 
@@ -49,8 +31,8 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username','').strip()
         password = request.form.get('password','').strip()
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s AND role='citizen'", (username,password))
         user = cursor.fetchone(); conn.close()
         if user:
@@ -67,7 +49,7 @@ def signup():
         username = request.form.get('username','').strip()
         password = request.form.get('password','').strip()
         try:
-            conn = mysql.connector.connect(**db_config)
+            conn = connect_db()
             cursor = conn.cursor()
             cursor.execute("INSERT INTO users (username,password,role) VALUES (%s,%s,'citizen')", (username,password))
             conn.commit(); conn.close()
@@ -83,8 +65,8 @@ def dashboard():
     if 'user' not in session or session.get('role') != 'citizen':
         return redirect(url_for('citizen.login'))
     username = session.get('user')
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT COUNT(*) as cnt FROM notifications WHERE recipient=%s AND is_read=0", (username,))
     notif_count = cursor.fetchone()['cnt']
     cursor.execute("SELECT COUNT(*) as cnt FROM land_records WHERE pattadar=%s", (username,))
@@ -110,8 +92,8 @@ def my_properties():
         return redirect(url_for('citizen.login'))
     assets = []
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM land_records WHERE pattadar=%s", (session.get('user'),))
         assets = cursor.fetchall(); conn.close()
     except Exception as e: print(f"Error: {e}")
@@ -124,8 +106,8 @@ def audit_trail():
     if 'user' not in session or session.get('role') != 'citizen':
         return redirect(url_for('citizen.login'))
     username = session.get('user')
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT id, username FROM users WHERE role='admin'")
     admins = cursor.fetchall()
     cursor.execute("SELECT * FROM land_records WHERE pattadar=%s", (username,))
@@ -178,8 +160,8 @@ def dispute_filing():
     username = session.get('user')
     disputes = []
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM disputes WHERE claimant_a=%s ORDER BY id DESC", (username,))
         disputes = cursor.fetchall(); conn.close()
     except Exception as e: print(f"Error: {e}")
@@ -196,7 +178,7 @@ def file_dispute():
     if not survey or not party_b or not reason:
         return jsonify({'status':'error','message':'All fields required.'}), 400
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO disputes (survey_no, claimant_a, claimant_b, reason, status) VALUES (%s,%s,%s,%s,'HEARING')",
                        (survey, claimant_a, party_b, reason))
@@ -213,8 +195,8 @@ def market_listings():
         return redirect(url_for('citizen.login'))
     all_properties = []
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM land_records ORDER BY id DESC")
         all_properties = cursor.fetchall(); conn.close()
     except Exception as e: print(f"Error: {e}")
@@ -228,8 +210,8 @@ def taxation():
         return redirect(url_for('citizen.login'))
     assets = []
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM land_records WHERE pattadar=%s", (session.get('user'),))
         assets = cursor.fetchall(); conn.close()
     except Exception as e: print(f"Error: {e}")
@@ -248,8 +230,8 @@ def request_transfer():
     if not prop_input or not receiver or not admin_id:
         return jsonify({'status':'error','message':'All fields required.'}), 400
     try:
-        conn   = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn   = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         # Accept either DB id or survey_no
         cursor.execute(
@@ -300,8 +282,8 @@ def notifications():
     if 'user' not in session or session.get('role') != 'citizen':
         return jsonify({'status':'error'}), 401
     username = session.get('user')
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT * FROM notifications WHERE recipient=%s ORDER BY created_at DESC LIMIT 20", (username,))
     notifs = cursor.fetchall()
     cursor.execute("UPDATE notifications SET is_read=1 WHERE recipient=%s", (username,))
@@ -324,11 +306,13 @@ def register_property():
     if not location or not survey or not area:
         return jsonify({'status':'error','message':'Missing required fields.'}), 400
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = connect_db()
         cursor = conn.cursor()
         prop_hash = hashlib.sha256(json.dumps({'owner':owner,'survey':survey,'location':location}).encode()).hexdigest()
-        cursor.execute("INSERT INTO land_records (pattadar, location, survey_no, extent, land_category) VALUES (%s,%s,%s,%s,%s)",
-                       (owner, location, survey, area, category))
+        cursor.execute(
+            "INSERT INTO land_records (pattadar, location, survey_no, extent, land_category, block_hash, property_hash, officer, district, coordinates) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (owner, location, survey, area, category, prop_hash, prop_hash, owner, location, '')
+        )
         conn.commit(); conn.close()
         land_chain.add_block({'type':'INSCRIPTION','owner':owner,'survey':survey,'location':location})
         return jsonify({'status':'success','message':'Property registered successfully.'})
@@ -342,8 +326,8 @@ def transfer_history():
     if 'user' not in session or session.get('role') != 'citizen':
         return redirect(url_for('citizen.login'))
     username = session.get('user')
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=True)
+    conn = connect_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # All transfers where citizen is sender OR receiver
     cursor.execute('''

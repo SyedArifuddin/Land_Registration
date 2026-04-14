@@ -1,6 +1,6 @@
+from psycopg2.extras import RealDictCursor
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash
-import mysql.connector
-from auth import db_config
+from auth import db_config, connect_db
 
 tribunal_bp = Blueprint('tribunal', __name__)
 
@@ -17,7 +17,7 @@ def index():
         party_b   = request.form.get('party_b')
         reason    = request.form.get('reason', '')
         try:
-            conn = mysql.connector.connect(**db_config)
+            conn = connect_db()
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO disputes (survey_no, claimant_a, claimant_b, reason, status) VALUES (%s,%s,%s,%s,'HEARING')",
@@ -31,8 +31,8 @@ def index():
 
     disputes = []
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT * FROM disputes ORDER BY id DESC")
         disputes = cursor.fetchall()
         conn.close()
@@ -45,7 +45,7 @@ def index():
 def update_status(case_id):
     new_status = request.form.get('status')
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = connect_db()
         cursor = conn.cursor()
         cursor.execute("UPDATE disputes SET status=%s WHERE id=%s", (new_status, case_id))
         conn.commit()

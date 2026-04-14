@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-import mysql.connector
 import hashlib
 import json
-from auth import db_config
+from auth import db_config, connect_db
 from blockchain_config import land_chain
 
 inscription_bp = Blueprint('inscription', __name__)
@@ -44,21 +43,26 @@ def index():
             'entry_type':  'INSCRIPTION'
         })
 
-        # 2. Save to MySQL using actual land_records column names
+        # 2. Save to DB using actual land_records column names
         try:
-            conn   = mysql.connector.connect(**db_config)
+            conn   = connect_db()
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO land_records
-                    (pattadar, survey_no, extent, location, land_category, block_hash)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                    (pattadar, survey_no, extent, location, land_category,
+                     block_hash, property_hash, officer, district, coordinates)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 pattadar,
                 survey_no,
                 extent or 0,
                 district,
                 'General',
-                prop_hash
+                prop_hash,
+                prop_hash,
+                officer,
+                district,
+                coords
             ))
             conn.commit()
             conn.close()

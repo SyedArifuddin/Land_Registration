@@ -1,6 +1,6 @@
+from psycopg2.extras import RealDictCursor
 from flask import Blueprint, render_template, session, redirect, url_for
-import mysql.connector
-from auth import db_config
+from auth import db_config, connect_db
 from blockchain_config import land_chain
 
 mapping_bp = Blueprint('mapping', __name__)
@@ -8,8 +8,8 @@ mapping_bp = Blueprint('mapping', __name__)
 def sync_vault_to_blockchain():
     """Syncs deeds from DB to Blockchain so the GIS feed has live data."""
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         # Fetch all records to populate the map
         cursor.execute("SELECT * FROM land_records")
         all_deeds = cursor.fetchall()
@@ -23,11 +23,11 @@ def sync_vault_to_blockchain():
             if not exists:
                 blockchain_payload = {
                     'land_id': str(deed['survey_no']),
-                    'owner': deed['pattadar'],
-                    'area': deed['extent'],
-                    'officer': deed['officer'],
-                    'district': deed['district'],
-                    'coordinates': deed.get('coordinates') # Format: "17.38, 78.48"
+                    'owner': deed.get('pattadar') or deed.get('owner_name', 'N/A'),
+                    'area': deed.get('extent') or deed.get('area_sqft', '0'),
+                    'officer': deed.get('officer') or deed.get('pattadar'),
+                    'district': deed.get('location') or deed.get('district', 'N/A'),
+                    'coordinates': deed.get('coordinates', '')
                 }
                 land_chain.add_block(blockchain_payload)
     except Exception as e:
