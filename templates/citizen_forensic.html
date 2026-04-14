@@ -1,0 +1,114 @@
+{% extends "citizen_base.html" %}
+{% block content %}
+
+<div class="mb-4">
+    <h4 style="font-weight:700; color:#1a1a1a; margin:0;">Forensic Verifier</h4>
+    <p style="color:#888; font-size:0.78rem; margin-top:3px;">Verify any property hash against the blockchain ledger</p>
+</div>
+
+<!-- Search card -->
+<div class="c-card mb-4">
+    <div class="c-card-header">
+        <span class="c-card-title">Query Ledger by Survey ID or Hash</span>
+    </div>
+    <div style="padding:20px;">
+        <div class="row g-2">
+            <div class="col-md-10">
+                <input type="text" id="verifyInput" class="f-input"
+                       placeholder="Enter Survey Number or Property Hash..."
+                       value="{{ query or '' }}">
+            </div>
+            <div class="col-md-2">
+                <button class="btn-primary-c w-100" style="padding:10px;" onclick="doVerify()">
+                    <i class="fas fa-search me-1"></i> Verify
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Result -->
+{% if query %}
+<div class="c-card mb-4" style="border-left: 4px solid {{ '#52c41a' if status == 'VALIDATED' else '#ff4d4f' }};">
+    <div style="padding:20px;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <strong style="font-size:0.9rem;">Verification: {{ query }}</strong>
+            <span class="{{ 'b-approved' if status == 'VALIDATED' else 'b-rejected' }}">
+                {{ status }}
+            </span>
+        </div>
+        {% if status == 'VALIDATED' %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div style="font-size:0.65rem; color:#888; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Cryptographic Hash</div>
+                <code style="font-size:0.75rem; color:#0958d9; word-break:break-all; background:#f0f7ff; padding:6px 10px; border-radius:4px; display:block;">
+                    {{ result.get('hash', 'N/A') }}
+                </code>
+            </div>
+            <div class="col-md-3">
+                <div style="font-size:0.65rem; color:#888; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Pattadar</div>
+                <strong>{{ result.get('transactions', [{}])[0].get('pattadar') or result.get('transactions', [{}])[0].get('owner', 'N/A') }}</strong>
+            </div>
+            <div class="col-md-3">
+                <div style="font-size:0.65rem; color:#888; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Block Index</div>
+                <strong>#{{ result.get('index', 'N/A') }}</strong>
+            </div>
+        </div>
+        {% else %}
+        <p style="color:#888; margin:0; font-size:0.83rem;">No record found matching this ID in the blockchain.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- All blocks -->
+<div class="c-card">
+    <div class="c-card-header">
+        <span class="c-card-title">Cryptographic Audit Trail</span>
+        <div class="d-flex gap-2">
+            <span class="b-info">Acres: {{ telemetry.verified_acres }}</span>
+            <span class="b-info">Blocks: {{ telemetry.active_shards }}</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table">
+            <thead>
+                <tr>
+                    <th>Block</th>
+                    <th>Data Payload</th>
+                    <th>Previous Hash</th>
+                    <th>Merkle Root</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for block in chain|reverse %}
+                <tr>
+                    <td><strong style="color:#1890ff;">#{{ block.get('index', 0) }}</strong></td>
+                    <td>
+                        <span class="b-info" style="font-size:0.65rem;">
+                            {% if block.get('index') == 1 %}GENESIS
+                            {% else %}
+                                ID: {{ block.get('transactions', [{}])[0].get('land_id', block.get('transactions', [{}])[0].get('survey', 'N/A')) }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td><code style="font-size:0.7rem; color:#888;">{{ block.get('previous_hash', '0')[:32] }}...</code></td>
+                    <td><code style="font-size:0.7rem; color:#0958d9;">{{ block.get('hash', '0')[:32] }}...</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function doVerify() {
+    const q = document.getElementById('verifyInput').value.trim();
+    if (!q) { alert('Please enter a survey number or hash.'); return; }
+    window.location.href = '{{ url_for("citizen.forensic_verify") }}?query=' + encodeURIComponent(q);
+}
+document.getElementById('verifyInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doVerify();
+});
+</script>
+{% endblock %}

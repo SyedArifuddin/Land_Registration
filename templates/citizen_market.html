@@ -1,0 +1,310 @@
+{% extends "citizen_base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<div class="mb-4">
+    <h4 style="font-weight:700; color:#1a1a1a; margin:0;">Land Cost Estimator</h4>
+    <p style="color:#888; font-size:0.78rem; margin-top:3px;">
+        Click anywhere on the Telangana map to get land cost estimates for that district
+    </p>
+</div>
+
+<div class="row g-3">
+    <!-- Map -->
+    <div class="col-md-7">
+        <div class="c-card" style="padding:0; overflow:hidden;">
+            <div class="c-card-header">
+                <span class="c-card-title">Telangana District Map</span>
+                <span id="mapStatus" class="b-info">Click on map to select location</span>
+            </div>
+            <div id="map" style="height:500px;"></div>
+        </div>
+    </div>
+
+    <!-- Estimate panel -->
+    <div class="col-md-5">
+
+        <!-- Selected location info -->
+        <div class="c-card mb-3" id="locationCard" style="display:none;">
+            <div class="c-card-header">
+                <span class="c-card-title">Selected Location</span>
+                <span class="b-approved">Live</span>
+            </div>
+            <div style="padding:16px 20px;">
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:0.6rem; font-weight:700; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-bottom:3px;">District</div>
+                    <div id="districtName" style="font-size:1rem; font-weight:700; color:#1a1a1a;">—</div>
+                </div>
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:0.6rem; font-weight:700; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-bottom:3px;">Coordinates</div>
+                    <div id="coordsDisplay" style="font-family:monospace; font-size:0.78rem; color:#555;">—</div>
+                </div>
+                <div>
+                    <div style="font-size:0.6rem; font-weight:700; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-bottom:3px;">Base Rate (per sq.ft)</div>
+                    <div id="baseRate" style="font-size:1.1rem; font-weight:700; color:#b8860b;">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Area input -->
+        <div class="c-card mb-3" id="inputCard" style="display:none;">
+            <div class="c-card-header">
+                <span class="c-card-title">Enter Land Details</span>
+            </div>
+            <div style="padding:16px 20px;">
+                <div class="mb-3">
+                    <label class="f-label">Area (in Acres)</label>
+                    <input type="number" id="areaAcres" class="f-input" placeholder="e.g. 2.5" oninput="calculateCost()">
+                </div>
+                <div class="mb-3">
+                    <label class="f-label">Land Category</label>
+                    <select id="landCategory" class="f-select" onchange="calculateCost()">
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Agricultural">Agricultural</option>
+                        <option value="Industrial">Industrial</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost estimate table -->
+        <div class="c-card" id="estimateCard" style="display:none;">
+            <div class="c-card-header">
+                <span class="c-card-title">Cost Estimate</span>
+            </div>
+            <div style="padding:0;">
+                <table class="c-table" id="estimateTable">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th class="text-end">Amount (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="estimateBody">
+                    </tbody>
+                </table>
+            </div>
+            <div style="padding:14px 20px; background:#fafafa; border-top:1px solid #f0f0f0;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.75rem; font-weight:700; color:#333; text-transform:uppercase; letter-spacing:1px;">Total Estimate</span>
+                    <span id="totalCost" style="font-size:1.2rem; font-weight:700; color:#722ed1;">₹ 0</span>
+                </div>
+                <p style="font-size:0.65rem; color:#aaa; margin-top:6px; margin-bottom:0;">
+                    * Estimates based on Telangana Registration Dept. guideline values. Actual market rates may vary.
+                </p>
+            </div>
+        </div>
+
+        <!-- Instructions (shown before click) -->
+        <div id="instructionCard" class="c-card">
+            <div style="padding:30px 20px; text-align:center;">
+                <i class="fas fa-map-marker-alt fa-3x mb-3" style="color:#d9d9d9;"></i>
+                <p style="color:#888; font-size:0.83rem; margin:0;">
+                    Click anywhere on the Telangana map to select a location and get instant land cost estimates.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registered properties on map -->
+<div class="c-card mt-3">
+    <div class="c-card-header">
+        <span class="c-card-title">Registered Properties in Sovereign Ledger</span>
+        <span class="b-info">{{ all_properties|length }} records</span>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Location</th><th>Survey No.</th>
+                    <th>Owner</th><th>Area (sq.ft)</th><th>Est. Value (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in all_properties %}
+                <tr>
+                    <td><code style="color:#1890ff;">#{{ p.id }}</code></td>
+                    <td style="font-weight:600;">{{ p.location }}</td>
+                    <td><span class="b-info">{{ p.survey_no }}</span></td>
+                    <td>{{ p.pattadar }}</td>
+                    <td>{{ "{:,.2f}".format(p.extent|float) }}</td>
+                    <td style="font-weight:600; color:#722ed1;">
+                        ₹ {{ "{:,.0f}".format((p.extent|float) * 450) }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4" style="color:#bbb;">No properties registered yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // ── District rate map (₹ per sq.ft guideline values) ──────
+    const districtRates = {
+        'Hyderabad':      { residential: 4500, commercial: 8000, agricultural: 800,  industrial: 3000 },
+        'Rangareddy':     { residential: 2800, commercial: 5000, agricultural: 600,  industrial: 2200 },
+        'Medchal':        { residential: 2200, commercial: 3500, agricultural: 500,  industrial: 1800 },
+        'Sangareddy':     { residential: 1200, commercial: 2000, agricultural: 350,  industrial: 1000 },
+        'Nalgonda':       { residential: 800,  commercial: 1400, agricultural: 280,  industrial: 700  },
+        'Warangal':       { residential: 1100, commercial: 1800, agricultural: 300,  industrial: 900  },
+        'Karimnagar':     { residential: 950,  commercial: 1600, agricultural: 260,  industrial: 800  },
+        'Nizamabad':      { residential: 850,  commercial: 1400, agricultural: 240,  industrial: 750  },
+        'Khammam':        { residential: 900,  commercial: 1500, agricultural: 270,  industrial: 780  },
+        'Mahbubnagar':    { residential: 750,  commercial: 1200, agricultural: 220,  industrial: 650  },
+        'Adilabad':       { residential: 650,  commercial: 1000, agricultural: 190,  industrial: 580  },
+        'Suryapet':       { residential: 700,  commercial: 1100, agricultural: 210,  industrial: 600  },
+        'Yadadri':        { residential: 1500, commercial: 2500, agricultural: 400,  industrial: 1200 },
+        'Vikarabad':      { residential: 1000, commercial: 1700, agricultural: 300,  industrial: 850  },
+        'Siddipet':       { residential: 900,  commercial: 1500, agricultural: 260,  industrial: 800  },
+        'Jagtial':        { residential: 750,  commercial: 1200, agricultural: 230,  industrial: 650  },
+        'Jangaon':        { residential: 700,  commercial: 1100, agricultural: 200,  industrial: 620  },
+        'Bhadradri':      { residential: 800,  commercial: 1300, agricultural: 250,  industrial: 700  },
+        'Mancherial':     { residential: 720,  commercial: 1150, agricultural: 220,  industrial: 640  },
+        'Nirmal':         { residential: 680,  commercial: 1050, agricultural: 200,  industrial: 600  },
+        'Peddapalli':     { residential: 750,  commercial: 1200, agricultural: 230,  industrial: 660  },
+        'Rajanna':        { residential: 700,  commercial: 1100, agricultural: 210,  industrial: 620  },
+        'Mulugu':         { residential: 600,  commercial: 950,  agricultural: 180,  industrial: 540  },
+        'Narayanpet':     { residential: 620,  commercial: 980,  agricultural: 185,  industrial: 550  },
+        'Nagarkurnool':   { residential: 680,  commercial: 1080, agricultural: 200,  industrial: 600  },
+        'Wanaparthy':     { residential: 660,  commercial: 1060, agricultural: 195,  industrial: 590  },
+        'Jogulamba':      { residential: 640,  commercial: 1020, agricultural: 190,  industrial: 570  },
+        'Mahabubabad':    { residential: 680,  commercial: 1080, agricultural: 200,  industrial: 600  },
+        'Kumuram Bheem':  { residential: 620,  commercial: 980,  agricultural: 185,  industrial: 550  },
+        'Medak':          { residential: 880,  commercial: 1450, agricultural: 250,  industrial: 780  },
+        'Kamareddy':      { residential: 800,  commercial: 1300, agricultural: 240,  industrial: 720  },
+        'Asifabad':       { residential: 600,  commercial: 950,  agricultural: 180,  industrial: 535  },
+        'Hanamkonda':     { residential: 1000, commercial: 1700, agricultural: 290,  industrial: 880  },
+    };
+
+    const SQ_FT_PER_ACRE = 43560;
+    let selectedDistrict = null;
+    let currentRates     = null;
+    let marker           = null;
+
+    // ── Leaflet map centred on Telangana ─────────────────────
+    const map = L.map('map').setView([17.8, 79.1], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap | Govt of Telangana'
+    }).addTo(map);
+
+    // Plot registered properties as small markers
+    {% for p in all_properties %}
+    {% if p.coordinates %}
+    try {
+        const coords = "{{ p.coordinates }}".split(',').map(Number);
+        if (coords.length === 2 && !isNaN(coords[0])) {
+            L.circleMarker(coords, {radius:6, color:'#1890ff', fillColor:'#1890ff', fillOpacity:0.7})
+             .addTo(map)
+             .bindPopup(`<b>{{ p.location }}</b><br>Owner: {{ p.pattadar }}<br>Area: {{ p.extent }} sq.ft`);
+        }
+    } catch(e) {}
+    {% endif %}
+    {% endfor %}
+
+    // ── Reverse geocode to get district name ─────────────────
+    async function getDistrict(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+            const data = await res.json();
+            const addr = data.address || {};
+            return addr.county || addr.state_district || addr.city || addr.town || addr.village || 'Telangana';
+        } catch { return 'Telangana'; }
+    }
+
+    function getBestRate(districtRaw) {
+        // Try exact match first, then partial
+        for (const key of Object.keys(districtRates)) {
+            if (districtRaw.toLowerCase().includes(key.toLowerCase()) ||
+                key.toLowerCase().includes(districtRaw.toLowerCase())) {
+                return { name: key, rates: districtRates[key] };
+            }
+        }
+        return { name: districtRaw, rates: districtRates['Nalgonda'] }; // default mid-range
+    }
+
+    // ── Map click handler ─────────────────────────────────────
+    map.on('click', async function(e) {
+        const lat = e.latlng.lat.toFixed(6);
+        const lng = e.latlng.lng.toFixed(6);
+
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([lat, lng]).addTo(map);
+
+        document.getElementById('mapStatus').textContent = 'Fetching district...';
+        document.getElementById('instructionCard').style.display = 'none';
+
+        const districtRaw = await getDistrict(lat, lng);
+        const matched     = getBestRate(districtRaw);
+        selectedDistrict  = matched.name;
+        currentRates      = matched.rates;
+
+        document.getElementById('districtName').textContent  = selectedDistrict;
+        document.getElementById('coordsDisplay').textContent = `${lat}, ${lng}`;
+        document.getElementById('baseRate').textContent      = `₹ ${currentRates.residential.toLocaleString('en-IN')} / sq.ft`;
+        document.getElementById('mapStatus').textContent     = selectedDistrict;
+        document.getElementById('locationCard').style.display = 'block';
+        document.getElementById('inputCard').style.display    = 'block';
+        document.getElementById('estimateCard').style.display = 'block';
+
+        calculateCost();
+    });
+
+    // ── Cost calculator ───────────────────────────────────────
+    function calculateCost() {
+        if (!currentRates) return;
+
+        const acres    = parseFloat(document.getElementById('areaAcres').value) || 0;
+        const category = document.getElementById('landCategory').value.toLowerCase();
+        const sqft     = acres * SQ_FT_PER_ACRE;
+        const rate     = currentRates[category] || currentRates.residential;
+
+        const landCost       = sqft * rate;
+        const regFee         = landCost * 0.06;   // 6% registration
+        const stampDuty      = landCost * 0.04;   // 4% stamp duty
+        const transferFee    = landCost * 0.005;  // 0.5% transfer
+        const total          = landCost + regFee + stampDuty + transferFee;
+
+        const fmt = v => '₹ ' + Math.round(v).toLocaleString('en-IN');
+
+        document.getElementById('estimateBody').innerHTML = `
+            <tr>
+                <td>
+                    <div style="font-weight:600;">Land Value</div>
+                    <div style="font-size:0.7rem; color:#888;">${sqft.toLocaleString('en-IN', {maximumFractionDigits:0})} sq.ft × ₹${rate.toLocaleString('en-IN')}/sq.ft</div>
+                </td>
+                <td class="text-end" style="font-weight:600;">${fmt(landCost)}</td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="font-weight:600;">Registration Fee</div>
+                    <div style="font-size:0.7rem; color:#888;">6% of land value</div>
+                </td>
+                <td class="text-end">${fmt(regFee)}</td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="font-weight:600;">Stamp Duty</div>
+                    <div style="font-size:0.7rem; color:#888;">4% of land value</div>
+                </td>
+                <td class="text-end">${fmt(stampDuty)}</td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="font-weight:600;">Transfer Fee</div>
+                    <div style="font-size:0.7rem; color:#888;">0.5% of land value</div>
+                </td>
+                <td class="text-end">${fmt(transferFee)}</td>
+            </tr>
+        `;
+        document.getElementById('totalCost').textContent = fmt(total);
+    }
+</script>
+{% endblock %}

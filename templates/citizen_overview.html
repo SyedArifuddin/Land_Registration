@@ -1,0 +1,82 @@
+{% extends "citizen_base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h4 style="font-weight:700; color:#1a1a1a; margin:0;">Network Forensic Overview</h4>
+        <p style="color:#888; font-size:0.78rem; margin-top:3px;">Real-time blockchain status for your account</p>
+    </div>
+    <span class="b-verified" style="padding:5px 12px; font-size:0.7rem;">LEDGER ACTIVE</span>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <small>Active Shards</small>
+            <h4>{{ stats.shards }} Nodes</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card green">
+            <small>Ledger Status</small>
+            <h4 style="color:#52c41a;">{{ stats.status }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card gold">
+            <small>Block Depth</small>
+            <h4>#{{ stats.height }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#722ed1;">
+            <small>My Properties</small>
+            <h4 style="color:#722ed1;">{{ my_property_count }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Latest hash -->
+<div class="c-card mb-4">
+    <div class="c-card-header">
+        <span class="c-card-title">Latest Block Hash</span>
+        <span class="b-info">Live</span>
+    </div>
+    <div style="padding:14px 20px;">
+        <code style="font-size:0.78rem; color:#0958d9; word-break:break-all; background:#f0f7ff; padding:8px 12px; border-radius:4px; display:block;">
+            {{ stats.hash }}...
+        </code>
+    </div>
+</div>
+
+<!-- Global Ledger -->
+<div class="c-card">
+    <div class="c-card-header">
+        <span class="c-card-title">Global Ledger Propagation</span>
+        <span class="b-info">{{ global_activity|length }} blocks</span>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table">
+            <thead>
+                <tr>
+                    <th>Index</th>
+                    <th>Cryptographic Proof</th>
+                    <th>Broadcast Time</th>
+                    <th>Validation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in global_activity %}
+                <tr>
+                    <td><strong style="color:#1890ff;">BLOCK-{{ b.index }}</strong></td>
+                    <td><code style="font-size:0.72rem; color:#555;">{{ b.hash }}</code></td>
+                    <td style="color:#888; font-size:0.78rem;">{{ b.timestamp }}</td>
+                    <td><span class="b-approved">SIGNED</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

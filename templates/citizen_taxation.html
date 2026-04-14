@@ -1,0 +1,97 @@
+{% extends "citizen_base.html" %}
+{% block content %}
+
+<div class="mb-4">
+    <h4 style="font-weight:700; color:#1a1a1a; margin:0;">Taxation &amp; Dues</h4>
+    <p style="color:#888; font-size:0.78rem; margin-top:3px;">Land tax summary based on your registered properties</p>
+</div>
+
+<!-- Tax summary stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <small>Total Properties</small>
+            <h4>{{ assets|length }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card gold">
+            <small>Total Area</small>
+            <h4 style="font-size:1.1rem;">
+                {% set total_area = assets|sum(attribute='extent') %}
+                {{ "{:,.2f}".format(total_area|float) }} sq.ft
+            </h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#722ed1;">
+            <small>Estimated Annual Tax</small>
+            <h4 style="color:#722ed1; font-size:1.1rem;">
+                ₹ {{ "{:,.2f}".format((total_area|float) * 0.05) }}
+            </h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card green">
+            <small>Tax Status</small>
+            <h4 style="color:#52c41a; font-size:1rem;">Up to Date</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Tax breakdown table -->
+<div class="c-card mb-4">
+    <div class="c-card-header">
+        <span class="c-card-title">Property Tax Breakdown</span>
+        <span style="font-size:0.68rem; color:#888;">Rate: ₹0.05 per sq.ft/year</span>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table">
+            <thead>
+                <tr>
+                    <th>Property ID</th>
+                    <th>Location</th>
+                    <th>Survey No.</th>
+                    <th>Category</th>
+                    <th>Area (sq.ft)</th>
+                    <th>Annual Tax (₹)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in assets %}
+                <tr>
+                    <td><code style="color:#1890ff;">#{{ a.id }}</code></td>
+                    <td style="font-weight:600;">{{ a.location }}</td>
+                    <td><span class="b-info">{{ a.survey_no }}</span></td>
+                    <td>{{ a.land_category or 'General' }}</td>
+                    <td>{{ "{:,.2f}".format(a.extent|float) }}</td>
+                    <td style="font-weight:600; color:#722ed1;">
+                        ₹ {{ "{:,.2f}".format((a.extent|float) * 0.05) }}
+                    </td>
+                    <td><span class="b-approved">Paid</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4" style="color:#bbb; font-size:0.82rem;">
+                        No properties found. Register land to view tax details.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Tax info notice -->
+<div style="background:#f0f7ff; border:1px solid #91caff; border-radius:8px; padding:16px 20px;">
+    <div style="font-size:0.78rem; color:#0958d9; font-weight:600; margin-bottom:6px;">
+        <i class="fas fa-info-circle me-1"></i> Tax Information
+    </div>
+    <p style="font-size:0.75rem; color:#555; margin:0; line-height:1.6;">
+        Land tax is calculated at <strong>₹0.05 per sq.ft per year</strong> for all categories.
+        Tax records are automatically computed from your registered land assets in the Sovereign Ledger.
+        For disputes or exemptions, please contact your assigned administrator.
+    </p>
+</div>
+{% endblock %}

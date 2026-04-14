@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Identity</title>
+</head>
+<body style="background:#000; color:gold; text-align:center; padding-top:50px; font-family:serif;">
+    <h2>⚜️ IDENTITY GATE ⚜️</h2>
+    <p id="msg">Scanning Biometrics...</p>
+
+    <script>
+        // Stabilize Device ID
+        let devId = localStorage.getItem('imp_dev_id');
+        if(!devId) {
+            devId = 'DEVICE-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('imp_dev_id', devId);
+        }
+
+        const payload = {
+            dev_id: devId,
+            sess_id: "{{ session_id }}",
+            mode: "{{ mode }}",
+            u: "{{ u }}",
+            p: "{{ p }}"
+        };
+
+        console.log("Sending Payload:", payload);
+
+        fetch('/api/verify_mobile', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.status === 'success') {
+                document.getElementById('msg').innerText = "✅ AUTHORIZED. CHECK LAPTOP.";
+            } else {
+                document.getElementById('msg').innerText = "❌ DEVICE NOT RECOGNIZED.";
+            }
+        })
+        .catch(err => {
+            document.getElementById('msg').innerText = "❌ CONNECTION ERROR.";
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Ledger | Governance Portal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        :root { --sidebar-width: 280px; }
+        body { background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
+        .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; background: var(--govt-navy); color: white; transition: var(--transition); z-index: 1000; }
+        .main-content { margin-left: var(--sidebar-width); min-height: 100vh; padding: 20px; }
+        .nav-link { color: rgba(255,255,255,0.7); border-radius: 8px; margin-bottom: 5px; transition: 0.3s; }
+        .nav-link:hover, .nav-link.active { background: rgba(184, 134, 11, 0.2); color: var(--imperial-gold); }
+        .status-dot { height: 10px; width: 10px; background-color: #28a745; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar d-flex flex-column p-4">
+        <h4 class="fw-bold mb-0" style="font-family: 'Cinzel'; color: var(--imperial-gold);">SOVEREIGN LEDGER</h4>
+        <p class="small text-white-50 mb-4">GOVERNANCE PORTAL</p>
+        
+        <div class="mb-4">
+            <small class="text-uppercase text-white-50 fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Core Registry</small>
+            <nav class="nav flex-column mt-2">
+                <a href="/dashboard" class="nav-link active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                <a href="/inscription" class="nav-link"><i class="bi bi-pen me-2"></i> Land Inscription</a>
+                <a href="/verifier" class="nav-link"><i class="bi bi-shield-check me-2"></i> Forensic Verifier</a>
+            </nav>
+        </div>
+
+        <div class="mb-4">
+            <small class="text-uppercase text-white-50 fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Analytics & Mapping</small>
+            <nav class="nav flex-column mt-2">
+                <a href="/mapping" class="nav-link"><i class="bi bi-map me-2"></i> District Mapping</a>
+                <a href="/tribunal" class="nav-link"><i class="bi bi-balance me-2"></i> Dispute Tribunal</a>
+            </nav>
+        </div>
+
+        <div class="mt-auto pt-4 border-top border-secondary">
+            <div class="d-flex align-items-center mb-2">
+                <div class="status-dot"></div>
+                <span class="small fw-bold">SYSTEM ONLINE</span>
+            </div>
+            <p class="small text-white-50 mb-1">Officer ID:</p>
+            <p class="small fw-bold mb-3" style="word-break: break-all;">{{ user }}</p>
+            <a href="/logout" class="btn btn-outline-light btn-sm w-100">Logout</a>
+        </div>
+    </div>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

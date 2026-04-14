@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sovereign Registry | Telangana</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .admin-options, .public-options { display: none; margin-top: 20px; gap: 10px; flex-direction: column; width: 100%; }
+        .admin-options.active, .public-options.active { display: flex; }
+        .btn-choice { 
+            padding: 12px; 
+            border: 1px solid var(--imperial-gold); 
+            background: rgba(0,0,0,0.5); 
+            color: var(--imperial-gold); 
+            text-decoration: none; 
+            font-weight: bold; 
+            transition: 0.3s;
+            text-align: center;
+        }
+        .btn-choice:hover { background: var(--imperial-gold); color: white; }
+    </style>
+</head>
+<body>
+    <div class="gateway">
+        <div class="gate-panel admin-panel">
+            <div class="gate-bg"></div>
+            <div class="gate-content">
+                <p>OFFICIAL ACCESS</p>
+                <h1>ADMINISTRATOR</h1>
+                <button class="btn-govt" onclick="toggleMenu('adminMenu')">ENTER GATEWAY</button>
+                <div id="adminMenu" class="admin-options">
+                    <a href="{{ url_for('login_gate', role='admin') }}" class="btn-choice">SIGN IN (QR AUTH)</a>
+                    <a href="{{ url_for('signup') }}" class="btn-choice">NEW REGISTRATION</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="gate-panel user-panel">
+            <div class="gate-bg"></div>
+            <div class="gate-content">
+                <p>CITIZEN PORTAL</p>
+                <h1>PUBLIC USER</h1>
+                <button class="btn-govt" onclick="toggleMenu('publicMenu')">VIEW REGISTRY</button>
+                <div id="publicMenu" class="public-options">
+                    <a href="{{ url_for('citizen.login') }}" class="btn-choice">SIGN IN</a>
+                    <a href="{{ url_for('citizen.signup') }}" class="btn-choice">NEW REGISTRATION</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu(menuId) {
+            const adminMenu = document.getElementById('adminMenu');
+            const publicMenu = document.getElementById('publicMenu');
+            
+            if (menuId === 'adminMenu') {
+                adminMenu.classList.toggle('active');
+                publicMenu.classList.remove('active');
+            } else {
+                publicMenu.classList.toggle('active');
+                adminMenu.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>

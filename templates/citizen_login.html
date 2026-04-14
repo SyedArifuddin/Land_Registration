@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Sign In | Sovereign Ledger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            background: #000c17;
+            background-image: url('https://images.unsplash.com/photo-1529070538774-1843cb3265df?q=80&w=2000');
+            background-size: cover;
+            background-position: center;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0,12,23,0.88);
+            z-index: 0;
+        }
+        .wrap { position: relative; z-index: 1; width: 100%; max-width: 420px; padding: 20px; }
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(184,134,11,0.35);
+            border-top: 3px solid #b8860b;
+            padding: 44px 40px;
+        }
+        .brand { text-align: center; margin-bottom: 32px; }
+        .brand h2 { font-family: 'Cinzel', serif; color: #b8860b; font-size: 1.1rem; letter-spacing: 3px; margin-bottom: 6px; }
+        .brand p { font-size: 0.62rem; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+        .form-label { display: block; font-size: 0.62rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 7px; }
+        .form-control {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(184,134,11,0.22);
+            color: #e6edf3;
+            padding: 11px 14px;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: 0.2s;
+        }
+        .form-control:focus { border-color: rgba(184,134,11,0.6); background: rgba(255,255,255,0.06); }
+        .form-control::placeholder { color: rgba(255,255,255,0.15); }
+        .mb-field { margin-bottom: 18px; }
+        .btn-submit {
+            width: 100%; padding: 13px;
+            background: #b8860b; color: #000; border: none;
+            font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: 0.2s; margin-top: 8px;
+        }
+        .btn-submit:hover { background: #d4a017; }
+        .divider { width: 100%; height: 1px; background: linear-gradient(to right, transparent, rgba(184,134,11,0.25), transparent); margin: 22px 0; }
+        .alert-box { background: rgba(220,53,69,0.1); border: 1px solid rgba(220,53,69,0.3); color: #f85149; font-size: 0.75rem; padding: 10px 14px; margin-bottom: 18px; }
+        .alert-box.success { background: rgba(40,167,69,0.1); border-color: rgba(40,167,69,0.3); color: #3fb950; }
+        .footer-links { text-align: center; font-size: 0.72rem; color: rgba(255,255,255,0.25); line-height: 2; }
+        .footer-links a { color: rgba(184,134,11,0.7); text-decoration: none; }
+        .footer-links a:hover { color: #b8860b; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="brand">
+                <h2>Citizen Sign In</h2>
+                <p>Sovereign Ledger — Telangana</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-box {{ 'success' if category == 'success' else '' }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('citizen.login') }}" autocomplete="off">
+                <!-- Hidden decoy fields to fool browser autofill -->
+                <input type="text" style="display:none;" aria-hidden="true" tabindex="-1">
+                <input type="password" style="display:none;" aria-hidden="true" tabindex="-1">
+
+                <div class="mb-field">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control"
+                           placeholder="Enter your username"
+                           required autofocus
+                           autocomplete="off"
+                           readonly
+                           onfocus="this.removeAttribute('readonly')">
+                </div>
+                <div class="mb-field">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control"
+                           placeholder="••••••••"
+                           required
+                           autocomplete="off"
+                           readonly
+                           onfocus="this.removeAttribute('readonly')">
+                </div>
+                <button type="submit" class="btn-submit">Access Ledger</button>
+            </form>
+
+            <div class="divider"></div>
+            <div class="footer-links">
+                New citizen? <a href="{{ url_for('citizen.signup') }}">Register here</a><br>
+                <a href="{{ url_for('landing') }}">← Back to Gateway</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Gateway</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { background: #000; color: #b8860b; text-align: center; padding-top: 100px; font-family: 'serif'; }
+        .choice-card { border: 2px solid #b8860b; padding: 40px; display: inline-block; border-radius: 15px; }
+        .btn-gold { background: #b8860b; color: #000; font-weight: bold; margin: 10px; }
+    </style>
+</head>
+<body>
+    <div class="choice-card">
+        <h2>ADMINISTRATOR ACCESS</h2>
+        <p>Is this a new device or a recognized device?</p>
+        <a href="/login?mode=login" class="btn btn-gold">RECOGNIZED DEVICE (Login)</a>
+        <a href="/login?mode=register" class="btn btn-outline-warning">NEW DEVICE (Link Phone)</a>
+    </div>
+</body>
+</html>

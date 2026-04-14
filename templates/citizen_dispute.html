@@ -1,0 +1,113 @@
+{% extends "citizen_base.html" %}
+{% block content %}
+
+<div class="mb-4">
+    <h4 style="font-weight:700; color:#1a1a1a; margin:0;">Dispute Filing</h4>
+    <p style="color:#888; font-size:0.78rem; margin-top:3px;">File a dispute against a conflicting land claim</p>
+</div>
+
+<!-- File dispute form -->
+<div class="c-card mb-4">
+    <div class="c-card-header">
+        <span class="c-card-title">File New Dispute</span>
+    </div>
+    <div style="padding:20px;">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="f-label">Property / Survey No.</label>
+                <input type="text" id="d_survey" class="f-input" placeholder="e.g. 102/C">
+            </div>
+            <div class="col-md-4">
+                <label class="f-label">Your Claim (Party A)</label>
+                <input type="text" id="d_party_a" class="f-input" placeholder="Your name" value="{{ user }}" readonly
+                       style="background:#f5f5f5;">
+            </div>
+            <div class="col-md-4">
+                <label class="f-label">Opposing Party (Party B)</label>
+                <input type="text" id="d_party_b" class="f-input" placeholder="Opposing party name">
+            </div>
+            <div class="col-md-11">
+                <label class="f-label">Reason for Dispute</label>
+                <input type="text" id="d_reason" class="f-input" placeholder="Briefly describe the dispute...">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button class="btn-primary-c w-100" style="padding:10px;" onclick="fileDispute()">
+                    Submit
+                </button>
+            </div>
+        </div>
+        <div id="disputeResult" style="display:none; margin-top:12px;"></div>
+    </div>
+</div>
+
+<!-- My disputes -->
+<div class="c-card">
+    <div class="c-card-header">
+        <span class="c-card-title">My Filed Disputes</span>
+        <span class="b-info">{{ disputes|length }} total</span>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table">
+            <thead>
+                <tr>
+                    <th>Case ID</th>
+                    <th>Survey No.</th>
+                    <th>Party B</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in disputes %}
+                <tr>
+                    <td><code style="color:#1890ff;">#TRB-{{ d.id }}</code></td>
+                    <td><span class="b-info">{{ d.survey_no }}</span></td>
+                    <td style="color:#ff4d4f;">{{ d.claimant_b }}</td>
+                    <td style="font-size:0.78rem; color:#555;">{{ d.reason or '—' }}</td>
+                    <td>
+                        {% if d.status == 'RESOLVED' %}
+                        <span class="b-approved">Resolved</span>
+                        {% elif d.status == 'DISMISSED' %}
+                        <span class="b-rejected">Dismissed</span>
+                        {% else %}
+                        <span class="b-pending">Hearing</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4" style="color:#bbb; font-size:0.82rem;">
+                        No disputes filed yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function fileDispute() {
+    const survey  = document.getElementById('d_survey').value.trim();
+    const party_b = document.getElementById('d_party_b').value.trim();
+    const reason  = document.getElementById('d_reason').value.trim();
+
+    if (!survey || !party_b || !reason) { alert('Please fill all fields.'); return; }
+
+    fetch('/citizen/file_dispute', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({ survey_no: survey, party_b, reason })
+    })
+    .then(r => r.json())
+    .then(d => {
+        const res = document.getElementById('disputeResult');
+        res.style.display = 'block';
+        res.innerHTML = d.status === 'success'
+            ? '<div style="color:#52c41a; background:#f6ffed; border:1px solid #b7eb8f; padding:8px 12px; border-radius:4px; font-size:0.8rem;">✅ ' + d.message + '</div>'
+            : '<div style="color:#cf1322; background:#fff1f0; border:1px solid #ffa39e; padding:8px 12px; border-radius:4px; font-size:0.8rem;">❌ ' + d.message + '</div>';
+        if (d.status === 'success') setTimeout(() => location.reload(), 1200);
+    });
+}
+</script>
+{% endblock %}

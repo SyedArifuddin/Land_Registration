@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Ledger | Administrative Command</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:     #001a33;
+            --gold:     #b8860b;
+            --gold-lit: #d4a017;
+            --surface:  #f5f7fa;
+            --white:    #ffffff;
+            --border:   #e8e8e8;
+            --text:     #1a1a1a;
+            --muted:    #888888;
+            --sidebar-w: 260px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--surface); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; color: var(--text); }
+        .wrapper { display: flex; height: 100vh; }
+
+        /* ── SIDEBAR ── */
+        .sidebar { width: var(--sidebar-w); background: var(--navy); height: 100vh; border-right: 1px solid rgba(184,134,11,0.2); display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-brand { padding: 22px 20px 18px; background: #000c17; border-bottom: 2px solid var(--gold); text-align: center; }
+        .sidebar-brand h5 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; letter-spacing: 2px; margin: 0 0 3px; }
+        .sidebar-brand small { color: rgba(255,255,255,0.28); font-size: 0.58rem; letter-spacing: 3px; text-transform: uppercase; }
+        .sidebar-heading { font-size: 0.58rem; font-weight: 700; color: rgba(255,255,255,0.25); padding: 16px 20px 5px; text-transform: uppercase; letter-spacing: 2px; }
+        .nav-link { color: rgba(255,255,255,0.5); font-size: 0.8rem; font-weight: 500; padding: 9px 20px; display: flex; align-items: center; transition: 0.2s; text-decoration: none; border-left: 3px solid transparent; }
+        .nav-link i { margin-right: 10px; font-size: 0.95rem; }
+        .nav-link:hover, .nav-link.active { color: var(--gold); background: rgba(184,134,11,0.07); border-left-color: var(--gold); }
+        .sidebar-footer { margin-top: auto; padding: 14px 16px; border-top: 1px solid rgba(184,134,11,0.18); }
+        .btn-logout { display: block; width: 100%; padding: 9px; background: transparent; border: 1px solid rgba(220,53,69,0.4); color: #e05c6a; font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; text-align: center; transition: 0.2s; border-radius: 2px; }
+        .btn-logout:hover { background: rgba(220,53,69,0.1); color: #e05c6a; }
+
+        /* ── MAIN ── */
+        .main-content { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; background: var(--surface); }
+        .top-nav { background: var(--white); padding: 13px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .officer-label { font-size: 0.72rem; font-weight: 600; color: #555; letter-spacing: 1px; text-transform: uppercase; }
+        .officer-label span { color: var(--gold); }
+        .status-pill { font-size: 0.68rem; font-weight: 700; color: #52c41a; letter-spacing: 1px; }
+        .status-pill::before { content: '● '; font-size: 0.55rem; }
+        .content-body { padding: 28px 32px; }
+
+        /* ── STAT CARDS ── */
+        .stat-card { background: var(--white) !important; border: 1px solid var(--border) !important; border-top: 3px solid var(--gold) !important; border-radius: 8px !important; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stat-card small { display: block; font-size: 0.6rem; font-weight: 700; color: #aaa; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-card h4 { font-size: 1.55rem; font-weight: 700; color: var(--text); margin: 0; }
+        .stat-card h4.gold  { color: var(--gold); }
+        .stat-card h4.green { color: #52c41a; }
+
+        /* ── ACTION CARDS ── */
+        .action-card { background: var(--white) !important; border: 1px solid var(--border) !important; border-left: 4px solid var(--gold) !important; border-radius: 8px !important; padding: 18px 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .action-card.danger { border-left-color: #ff4d4f !important; }
+        .action-card small { display: block; font-size: 0.6rem; font-weight: 700; color: #aaa; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+        .action-card h4 { color: var(--text); font-size: 1rem; font-weight: 700; margin: 0; letter-spacing: 0.5px; }
+
+        /* ── TABLE CARD ── */
+        .table-card { background: var(--white) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .table-card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--white) !important; }
+        .table-card-header h6 { font-size: 0.65rem; font-weight: 700; color: #888; letter-spacing: 2px; text-transform: uppercase; margin: 0; }
+        .live-badge { font-size: 0.6rem; font-weight: 700; color: #52c41a; border: 1px solid rgba(82,196,26,0.35); padding: 3px 10px; border-radius: 20px; letter-spacing: 1px; background: #f6ffed; }
+        .table { color: var(--text) !important; margin: 0; }
+        .table thead th { background: #fafafa !important; color: #888 !important; font-size: 0.62rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border-color: var(--border) !important; padding: 12px 16px; }
+        .table tbody td { background: var(--white) !important; color: var(--text) !important; border-color: #f0f0f0 !important; padding: 12px 16px; font-size: 0.83rem; vertical-align: middle; }
+        .table tbody tr:hover td { background: #fafbff !important; }
+        .table code { color: var(--gold); background: #fffbe6; padding: 2px 7px; font-size: 0.73rem; border-radius: 3px; border: 1px solid #ffe58f; }
+
+        /* ── PAGE HEADING ── */
+        .page-title { font-family: 'Cinzel', serif; color: var(--navy); font-size: 1.5rem; letter-spacing: 1.5px; margin: 0; }
+        .page-subtitle { color: #888; font-size: 0.72rem; margin-top: 4px; }
+
+        /* ── REVIEW BUTTON ── */
+        .btn-review { background: var(--gold); color: #000; border: none; font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 11px 22px; text-decoration: none; transition: 0.2s; display: inline-block; white-space: nowrap; border-radius: 4px; }
+        .btn-review:hover { background: var(--gold-lit); color: #000; }
+
+        /* scrollbar */
+        .main-content::-webkit-scrollbar { width: 4px; }
+        .main-content::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h5>Sovereign Ledger</h5>
+            <small>Governance Portal</small>
+        </div>
+
+        <div class="sidebar-heading">Core Registry</div>
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a href="{{ url_for('inscription.index') }}" class="nav-link {% if 'inscription' in request.endpoint %}active{% endif %}">
+            <i class="bi bi-pen"></i> Land Inscription
+        </a>
+        <a href="{{ url_for('verifier.index') }}" class="nav-link {% if 'verifier' in request.endpoint %}active{% endif %}">
+            <i class="bi bi-shield-check"></i> Forensic Verifier
+        </a>
+
+        <div class="sidebar-heading">Analytics & Mapping</div>
+        <a href="{{ url_for('mapping.index') }}" class="nav-link {% if 'mapping' in request.endpoint %}active{% endif %}">
+            <i class="bi bi-geo-alt"></i> District Mapping
+        </a>
+        <a href="{{ url_for('tribunal.index') }}" class="nav-link {% if 'tribunal' in request.endpoint %}active{% endif %}">
+            <i class="bi bi-balance"></i> Dispute Tribunal
+        </a>
+
+        <div class="sidebar-heading">Management</div>
+        <a href="{{ url_for('vault.index') }}" class="nav-link {% if 'vault' in request.endpoint %}active{% endif %}">
+            <i class="bi bi-safe"></i> Digital Deed Vault
+        </a>
+        <a href="{{ url_for('registered_citizens') }}" class="nav-link {% if request.endpoint == 'registered_citizens' %}active{% endif %}">
+            <i class="bi bi-people"></i> Registered Citizens
+        </a>
+        <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
+            <i class="bi bi-bar-chart-line"></i> Reports & Statistics
+        </a>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-nav">
+            <div class="officer-label">Officer ID: <span>{{ user }}</span></div>
+            <div class="status-pill">SYSTEM ONLINE</div>
+        </div>
+        <div class="content-body">
+            {% block dashboard_only_metrics %}{% endblock %}
+            {% block content_padding %}{% endblock %}
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends "public_dashboard.html" %}
+{% block sub_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold text-dark">My Land Assets</h3>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">+ Register Land</button>
+</div>
+
+<div class="row g-4">
+    {% for asset in assets %}
+    <div class="col-md-6">
+        <div class="card p-3 border-start border-primary border-4">
+            <h5 class="fw-bold">{{ asset.location }}</h5>
+            <p class="text-muted small mb-1">Area: {{ asset.area }} sq.ft</p>
+            <code class="small text-primary">{{ asset.hash[:32] }}...</code>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">No assets found. Start by registering land.</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "dashboard.html" %}
+{% block dashboard_only_metrics %}{% endblock %}
+{% block content_padding %}
+<style>
+    .rc-header { margin-bottom: 28px; }
+    .rc-header h4 { font-family: 'Inter', sans-serif; font-weight: 700; color: #1a2332; font-size: 1.4rem; margin: 0 0 4px; letter-spacing: -0.3px; }
+    .rc-header p  { color: #888; font-size: 0.78rem; margin: 0; }
+
+    .kpi-card { background: white; border: 1px solid #e8e8e8; border-radius: 6px; padding: 18px 20px; border-left: 3px solid #1a2332; }
+    .kpi-card .kpi-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #999; display: block; margin-bottom: 6px; }
+    .kpi-card .kpi-value { font-size: 2rem; font-weight: 700; color: #1a2332; line-height: 1; margin-bottom: 3px; }
+    .kpi-card .kpi-sub { font-size: 0.72rem; color: #888; }
+
+    .s-card { background: white; border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden; }
+    .s-card-head { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+    .s-card-head h6 { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #555; margin: 0; }
+
+    .search-wrap { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+    .search-input { background: white; border: 1px solid #d9d9d9; border-radius: 4px; padding: 8px 12px 8px 34px; font-size: 0.82rem; color: #333; width: 280px; outline: none; transition: 0.2s; }
+    .search-input:focus { border-color: #1a2332; box-shadow: 0 0 0 2px rgba(26,35,50,0.06); }
+    .search-input::placeholder { color: #bbb; }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #bbb; font-size: 0.75rem; }
+
+    .r-table { width: 100%; border-collapse: collapse; }
+    .r-table thead th { background: #f8f9fa; font-size: 0.62rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #888; padding: 11px 16px; border-bottom: 1px solid #eee; text-align: left; }
+    .r-table tbody td { padding: 12px 16px; font-size: 0.82rem; color: #333; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+    .r-table tbody tr:last-child td { border-bottom: none; }
+    .r-table tbody tr:hover td { background: #fafbfc; }
+
+    .citizen-avatar { width: 30px; height: 30px; background: #1a2332; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: 700; margin-right: 10px; }
+    .prop-pill { background: #f0f4f8; color: #1a2332; font-size: 0.68rem; font-weight: 600; padding: 3px 8px; border-radius: 3px; }
+    .req-pill  { background: #f5f5f5; color: #555; font-size: 0.68rem; font-weight: 600; padding: 3px 8px; border-radius: 3px; }
+
+    code { color: #888; background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; }
+    .divider { border: none; border-top: 1px solid #eee; margin: 0 0 24px; }
+</style>
+
+<!-- Header -->
+<div class="rc-header">
+    <h4>Registered Citizens</h4>
+    <p>Sovereign Land Registry — Telangana &nbsp;|&nbsp; All citizen accounts</p>
+</div>
+<hr class="divider">
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="kpi-card">
+            <span class="kpi-label">Total Citizens</span>
+            <div class="kpi-value">{{ total_citizens }}</div>
+            <div class="kpi-sub">Registered accounts</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="kpi-card">
+            <span class="kpi-label">With Properties</span>
+            <div class="kpi-value">{{ citizens|selectattr('property_count','gt',0)|list|length }}</div>
+            <div class="kpi-sub">Active land holders</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="kpi-card">
+            <span class="kpi-label">With Requests</span>
+            <div class="kpi-value">{{ citizens|selectattr('transfer_count','gt',0)|list|length }}</div>
+            <div class="kpi-sub">Filed transfers</div>
+        </div>
+    </div>
+</div>
+
+<!-- Citizens table -->
+<div class="s-card">
+    <div class="s-card-head">
+        <h6>Citizen Directory</h6>
+        <span style="font-size:0.68rem; color:#aaa;">{{ total_citizens }} total</span>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+        <div style="position:relative; display:inline-block;">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" class="search-input" id="citizenSearch"
+                   placeholder="Search by username..." onkeyup="filterCitizens()">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="r-table" id="citizenTable">
+            <thead>
+                <tr>
+                    <th style="width:50px;">#</th>
+                    <th>Citizen</th>
+                    <th>Username ID</th>
+                    <th class="text-center">Properties</th>
+                    <th class="text-center">Transfer Requests</th>
+                    <th>Account Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in citizens %}
+                <tr class="citizen-row">
+                    <td style="color:#bbb; font-size:0.75rem;">{{ loop.index }}</td>
+                    <td>
+                        <div style="display:flex; align-items:center;">
+                            <div class="citizen-avatar">{{ c.username[0]|upper }}</div>
+                            <span class="citizen-name" style="font-weight:600; color:#1a2332;">
+                                {{ c.username }}
+                            </span>
+                        </div>
+                    </td>
+                    <td><code>#{{ c.id }}</code></td>
+                    <td class="text-center">
+                        <span class="prop-pill">{{ c.property_count }} properties</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="req-pill">{{ c.transfer_count }} requests</span>
+                    </td>
+                    <td>
+                        <span style="display:inline-flex; align-items:center; gap:5px; font-size:0.72rem; color:#2d7a2d; font-weight:600;">
+                            <span style="width:6px; height:6px; background:#52c41a; border-radius:50%; display:inline-block;"></span>
+                            Active
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:40px; color:#bbb; font-size:0.82rem;">
+                        No citizens registered yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterCitizens() {
+    const val = document.getElementById('citizenSearch').value.toUpperCase();
+    document.querySelectorAll('.citizen-row').forEach(row => {
+        const name = row.querySelector('.citizen-name').textContent.toUpperCase();
+        row.style.display = name.includes(val) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

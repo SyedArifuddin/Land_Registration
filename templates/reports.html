@@ -1,0 +1,229 @@
+{% extends "dashboard.html" %}
+{% block dashboard_only_metrics %}{% endblock %}
+{% block content_padding %}
+<style>
+    .rp-header { margin-bottom: 28px; }
+    .rp-header h4 { font-family: 'Inter', sans-serif; font-weight: 700; color: #1a2332; font-size: 1.4rem; margin: 0 0 4px; letter-spacing: -0.3px; }
+    .rp-header p  { color: #888; font-size: 0.78rem; margin: 0; }
+
+    /* KPI cards */
+    .kpi-card { background: white; border: 1px solid #e8e8e8; border-radius: 6px; padding: 18px 20px; }
+    .kpi-card .kpi-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #999; display: block; margin-bottom: 8px; }
+    .kpi-card .kpi-value { font-size: 2rem; font-weight: 700; color: #1a2332; line-height: 1; margin-bottom: 4px; }
+    .kpi-card .kpi-sub { font-size: 0.72rem; color: #888; }
+    .kpi-card.accent { border-left: 3px solid #1a2332; }
+
+    /* Section cards */
+    .s-card { background: white; border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden; margin-bottom: 20px; }
+    .s-card-head { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+    .s-card-head h6 { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #555; margin: 0; }
+    .s-card-head span { font-size: 0.68rem; color: #aaa; }
+    .s-card-body { padding: 18px 20px; }
+
+    /* Progress rows */
+    .prog-row { margin-bottom: 14px; }
+    .prog-row:last-child { margin-bottom: 0; }
+    .prog-row .prog-meta { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .prog-row .prog-label { font-size: 0.78rem; color: #555; font-weight: 500; }
+    .prog-row .prog-count { font-size: 0.78rem; color: #1a2332; font-weight: 700; }
+    .prog-track { height: 5px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 3px; background: #1a2332; }
+
+    /* Category rows */
+    .cat-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f5f5f5; font-size: 0.82rem; }
+    .cat-item:last-child { border-bottom: none; }
+    .cat-item .cat-name { color: #333; font-weight: 500; }
+    .cat-item .cat-val { color: #1a2332; font-weight: 700; font-size: 0.8rem; }
+    .cat-item .cat-sub { color: #aaa; font-size: 0.72rem; margin-left: 8px; }
+
+    /* Table */
+    .r-table { width: 100%; border-collapse: collapse; }
+    .r-table thead th { background: #f8f9fa; font-size: 0.62rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #888; padding: 11px 16px; border-bottom: 1px solid #eee; text-align: left; }
+    .r-table tbody td { padding: 11px 16px; font-size: 0.82rem; color: #333; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+    .r-table tbody tr:last-child td { border-bottom: none; }
+    .r-table tbody tr:hover td { background: #fafbfc; }
+
+    /* Status badges — subtle */
+    .st-approved { background: #f0faf0; color: #2d7a2d; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+    .st-rejected  { background: #fff0f0; color: #a33; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+    .st-pending   { background: #fafaf0; color: #7a6200; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+
+    code { color: #555; background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 0.72rem; }
+
+    .divider { border: none; border-top: 1px solid #eee; margin: 0 0 24px; }
+</style>
+
+<!-- Header -->
+<div class="rp-header">
+    <h4>Reports &amp; Statistics</h4>
+    <p>Sovereign Land Registry — Telangana &nbsp;|&nbsp; Data as of today</p>
+</div>
+<hr class="divider">
+
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="kpi-card accent">
+            <span class="kpi-label">Citizens</span>
+            <div class="kpi-value">{{ total_citizens }}</div>
+            <div class="kpi-sub">Registered accounts</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="kpi-card accent">
+            <span class="kpi-label">Land Records</span>
+            <div class="kpi-value">{{ total_land }}</div>
+            <div class="kpi-sub">Total properties</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card accent">
+            <span class="kpi-label">Total Area</span>
+            <div class="kpi-value" style="font-size:1.5rem;">{{ "{:,.0f}".format(total_area) }}</div>
+            <div class="kpi-sub">Square feet registered</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="kpi-card accent">
+            <span class="kpi-label">Blockchain</span>
+            <div class="kpi-value">{{ total_blocks }}</div>
+            <div class="kpi-sub">Blocks recorded</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card accent">
+            <span class="kpi-label">Disputes</span>
+            <div class="kpi-value">{{ total_disputes }}</div>
+            <div class="kpi-sub">{{ resolved_disputes }} resolved &nbsp;·&nbsp; {{ total_disputes - resolved_disputes }} pending</div>
+        </div>
+    </div>
+</div>
+
+<!-- Middle row -->
+<div class="row g-3 mb-4">
+
+    <!-- Transfer breakdown -->
+    <div class="col-md-4">
+        <div class="s-card">
+            <div class="s-card-head">
+                <h6>Transfer Requests</h6>
+                <span>Total: {{ total_transfers }}</span>
+            </div>
+            <div class="s-card-body">
+                {% set safe = total_transfers if total_transfers > 0 else 1 %}
+                <div class="prog-row">
+                    <div class="prog-meta">
+                        <span class="prog-label">Approved</span>
+                        <span class="prog-count">{{ approved_transfers }}</span>
+                    </div>
+                    <div class="prog-track">
+                        <div class="prog-fill" style="width:{{ ((approved_transfers/safe)*100)|round }}%; background:#2d7a2d;"></div>
+                    </div>
+                </div>
+                <div class="prog-row">
+                    <div class="prog-meta">
+                        <span class="prog-label">Pending</span>
+                        <span class="prog-count">{{ pending_transfers }}</span>
+                    </div>
+                    <div class="prog-track">
+                        <div class="prog-fill" style="width:{{ ((pending_transfers/safe)*100)|round }}%; background:#7a6200;"></div>
+                    </div>
+                </div>
+                <div class="prog-row">
+                    <div class="prog-meta">
+                        <span class="prog-label">Rejected</span>
+                        <span class="prog-count">{{ rejected_transfers }}</span>
+                    </div>
+                    <div class="prog-track">
+                        <div class="prog-fill" style="width:{{ ((rejected_transfers/safe)*100)|round }}%; background:#a33;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Land by category -->
+    <div class="col-md-4">
+        <div class="s-card">
+            <div class="s-card-head"><h6>Land by Category</h6></div>
+            <div class="s-card-body" style="padding-top:8px; padding-bottom:8px;">
+                {% for cat in land_by_category %}
+                <div class="cat-item">
+                    <span class="cat-name">{{ cat.land_category or 'General' }}</span>
+                    <div>
+                        <span class="cat-val">{{ cat.cnt }} plots</span>
+                        <span class="cat-sub">{{ "{:,.0f}".format(cat.area|float) }} sq.ft</span>
+                    </div>
+                </div>
+                {% else %}
+                <p style="color:#bbb; font-size:0.8rem; text-align:center; padding:16px 0; margin:0;">No land records yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top citizens -->
+    <div class="col-md-4">
+        <div class="s-card">
+            <div class="s-card-head"><h6>Top Citizens by Holdings</h6></div>
+            <div class="s-card-body" style="padding-top:8px; padding-bottom:8px;">
+                {% for c in top_citizens %}
+                <div class="cat-item">
+                    <span class="cat-name">{{ c.owner_name }}</span>
+                    <div>
+                        <span class="cat-val">{{ c.cnt }} plots</span>
+                        <span class="cat-sub">{{ "{:,.0f}".format(c.total_area|float) }} sq.ft</span>
+                    </div>
+                </div>
+                {% else %}
+                <p style="color:#bbb; font-size:0.8rem; text-align:center; padding:16px 0; margin:0;">No data yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent transfers -->
+<div class="s-card">
+    <div class="s-card-head">
+        <h6>Recent Transfer Activity</h6>
+        <span>Last 10 records</span>
+    </div>
+    <div class="table-responsive">
+        <table class="r-table">
+            <thead>
+                <tr>
+                    <th>Req ID</th>
+                    <th>Property</th>
+                    <th>From Citizen</th>
+                    <th>To Recipient</th>
+                    <th>Assigned Admin</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in recent_transfers %}
+                <tr>
+                    <td><code>#{{ t.id }}</code></td>
+                    <td style="font-weight:600; color:#1a2332;">Property #{{ t.property_id }}</td>
+                    <td>{{ t.sender }}</td>
+                    <td>{{ t.receiver }}</td>
+                    <td>{{ t.admin_name or '—' }}</td>
+                    <td>
+                        {% if t.status == 'Approved' %}<span class="st-approved">Approved</span>
+                        {% elif t.status == 'Rejected' %}<span class="st-rejected">Rejected</span>
+                        {% else %}<span class="st-pending">Pending</span>{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:28px; color:#bbb; font-size:0.82rem;">
+                        No transfer records yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

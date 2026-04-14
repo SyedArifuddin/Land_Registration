@@ -1,0 +1,112 @@
+{% extends "dashboard.html" %}
+
+{% block dashboard_only_metrics %}{% endblock %}
+
+{% block content_padding %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+    <div>
+        <h3 class="fw-bold" style="font-family: 'Playfair Display'; color: #001e3c;">🗺️ District Mapping</h3>
+        <p class="text-muted small mb-0">Regional Visualization of Blockchain-Registered Land Parcels.</p>
+    </div>
+    <div class="text-end">
+        <a href="{{ url_for('mapping.index') }}" class="btn btn-primary btn-sm px-3 shadow-sm">
+            <span class="spinner-grow spinner-grow-sm me-1"></span> LIVE GIS FEED (REFRESH)
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 mb-3">
+            <h6 class="fw-bold small text-uppercase mb-3">Map Layers</h6>
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="satelliteToggle">
+                <label class="form-check-label small" for="satelliteToggle">Satellite View</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="parcelToggle" checked>
+                <label class="form-check-label small" for="parcelToggle">Registered Parcels</label>
+            </div>
+            <hr>
+            <h6 class="fw-bold small text-uppercase mb-2">Registry Summary</h6>
+            <div class="p-2 bg-light rounded border">
+                <p class="mb-1 small"><strong>Total Pins:</strong> <span id="pinCount" class="badge bg-dark">0</span></p>
+                <p class="mb-0 small text-muted" style="font-size: 0.75rem;">Status: <span class="text-success">● Active</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="card border-0 shadow-sm p-1">
+            <div id="district-map" style="height: 600px; border-radius: 6px;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Initialize Map on Hyderabad coordinates
+    var map = L.map('district-map').setView([17.3850, 78.4867], 10);
+
+    var streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
+    });
+
+    // Satellite Toggle
+    document.getElementById('satelliteToggle').addEventListener('change', function(e) {
+        if(e.target.checked) { map.addLayer(satellite); map.removeLayer(streets); }
+        else { map.addLayer(streets); map.removeLayer(satellite); }
+    });
+
+    // Layer Group for Pins (Makes the Toggle work)
+    var parcelLayer = L.layerGroup().addTo(map);
+
+    document.getElementById('parcelToggle').addEventListener('change', function(e) {
+        if(e.target.checked) { map.addLayer(parcelLayer); }
+        else { map.removeLayer(parcelLayer); }
+    });
+
+    var pinsFound = 0;
+    
+    
+
+    // Loop through blocks and plot coordinates
+    {% for block in chain %}
+        {% if block.data and block.data.coordinates %}
+            try {
+                var coordsStr = "{{ block.data.coordinates }}";
+                var latlng = coordsStr.split(',').map(Number);
+                
+                if (latlng.length === 2 && !isNaN(latlng[0])) {
+                    L.marker(latlng).addTo(parcelLayer)
+                        .bindPopup(`
+                            <div style="font-family: sans-serif; min-width: 150px;">
+                                <h6 class="fw-bold mb-1 text-primary">ID: {{ block.data.land_id }}</h6>
+                                <p class="small mb-0"><strong>Owner:</strong> {{ block.data.owner }}</p>
+                                <p class="small mb-0"><strong>Area:</strong> {{ block.data.area }} Ac</p>
+                                <hr class="my-1">
+                                <code style="font-size: 9px; color: #777;">HASH: {{ block.hash[:16] }}...</code>
+                            </div>
+                        `);
+                    pinsFound++;
+                }
+            } catch (err) {
+                console.error("Map Error: Block {{ block.index }}");
+            }
+        {% endif %}
+    {% endfor %}
+
+    document.getElementById('pinCount').innerText = pinsFound;
+</script>
+
+<style>
+    #district-map { background: #f8fafc; border: 1px solid #ddd; }
+    .spinner-grow-sm { width: 0.7rem; height: 0.7rem; }
+</style>
+{% endblock %}

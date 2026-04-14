@@ -1,0 +1,8 @@
+{
+    "newonw@gmail.com": {
+        "password": "scrypt:32768:8:1$t4V83WZ6Cu6IeYEP$24bbb0d5b9023892de6d2516e3f7ec6f831fd357749ae4718d95eb160a886393dc21d6aa8b640c01c8547bceb125fbff10786bb8eb3b469dfca1520e9776060f",
+        "role": "user",
+        "otp_secret": "32XA4MVOASBHGYCKUPITU2GWZNTIXTZ2",
+        "verified": false
+    }
+}

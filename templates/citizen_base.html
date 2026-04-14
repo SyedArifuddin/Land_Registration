@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Portal | Sovereign Ledger</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: #001529;
+            --gold: #b8860b;
+            --gold-light: #d4a017;
+            --active-blue: #1890ff;
+            --text-muted: #8c8c8c;
+            --surface: #f5f7fa;
+            --card-bg: #ffffff;
+            --border: #e8e8e8;
+            --sidebar-w: 240px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--surface); font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+        /* ── SIDEBAR ── */
+        .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); height: 100vh; display: flex; flex-direction: column; flex-shrink: 0; position: fixed; }
+        .sidebar-brand { padding: 20px 18px 16px; background: #000c17; border-bottom: 2px solid var(--gold); text-align: center; }
+        .sidebar-brand h4 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.9rem; letter-spacing: 2px; margin: 0 0 2px; }
+        .sidebar-brand small { color: rgba(255,255,255,0.3); font-size: 0.58rem; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-section { font-size: 0.58rem; font-weight: 700; color: rgba(255,255,255,0.25); padding: 14px 18px 5px; text-transform: uppercase; letter-spacing: 2px; }
+        .nav-link { color: rgba(255,255,255,0.5); font-size: 0.78rem; font-weight: 500; padding: 9px 18px; display: flex; align-items: center; text-decoration: none; border-left: 3px solid transparent; transition: 0.2s; }
+        .nav-link i { width: 18px; margin-right: 10px; font-size: 0.85rem; }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.06); border-left-color: rgba(255,255,255,0.2); }
+        .nav-link.active { color: white; background: var(--active-blue); border-left-color: var(--active-blue); }
+        .sidebar-footer { margin-top: auto; padding: 14px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .btn-logout { display: block; width: 100%; padding: 8px; background: transparent; border: 1px solid rgba(220,53,69,0.4); color: #ff7875; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; text-align: center; transition: 0.2s; border-radius: 2px; }
+        .btn-logout:hover { background: rgba(220,53,69,0.1); color: #ff7875; }
+
+        /* ── MAIN ── */
+        .main-content { margin-left: var(--sidebar-w); flex-grow: 1; overflow-y: auto; background: var(--surface); }
+        .top-bar { background: white; padding: 12px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .top-bar .user-pill { font-size: 0.72rem; font-weight: 600; color: #333; }
+        .top-bar .user-pill span { color: var(--active-blue); }
+        .top-bar .status-dot { font-size: 0.68rem; color: #52c41a; font-weight: 600; }
+        .page-body { padding: 28px 32px; }
+
+        /* ── COMMON CARD ── */
+        .c-card { background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        .c-card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .c-card-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; margin: 0; }
+
+        /* ── STAT CARDS ── */
+        .stat-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; border-left: 4px solid var(--active-blue); }
+        .stat-card.gold  { border-left-color: var(--gold); }
+        .stat-card.green { border-left-color: #52c41a; }
+        .stat-card.red   { border-left-color: #ff4d4f; }
+        .stat-card small { font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #aaa; display: block; margin-bottom: 5px; }
+        .stat-card h4 { font-size: 1.4rem; font-weight: 700; color: #1a1a1a; margin: 0; }
+
+        /* ── TABLES ── */
+        .c-table { width: 100%; border-collapse: collapse; }
+        .c-table thead th { background: #fafafa; font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #888; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        .c-table tbody td { padding: 12px 16px; font-size: 0.83rem; color: #333; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .c-table tbody tr:last-child td { border-bottom: none; }
+        .c-table tbody tr:hover td { background: #fafbff; }
+
+        /* ── BADGES ── */
+        .b-pending  { background: #fff7e6; color: #d46b08; border: 1px solid #ffd591; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+        .b-approved { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+        .b-rejected { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+        .b-verified { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+        .b-info     { background: #e6f7ff; color: #0958d9; border: 1px solid #91caff; font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+
+        /* ── FORM INPUTS ── */
+        .f-input { background: white; border: 1px solid #d9d9d9; border-radius: 4px; padding: 9px 12px; font-size: 0.85rem; color: #333; width: 100%; transition: 0.2s; }
+        .f-input:focus { border-color: var(--active-blue); outline: none; box-shadow: 0 0 0 2px rgba(24,144,255,0.1); }
+        .f-input::placeholder { color: #bbb; }
+        .f-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #666; display: block; margin-bottom: 5px; }
+        .f-select { background: white; border: 1px solid #d9d9d9; border-radius: 4px; padding: 9px 12px; font-size: 0.85rem; color: #333; width: 100%; }
+        .f-select:focus { border-color: var(--active-blue); outline: none; }
+
+        /* ── BUTTONS ── */
+        .btn-primary-c { background: var(--active-blue); color: white; border: none; font-size: 0.72rem; font-weight: 600; letter-spacing: 1px; padding: 9px 20px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn-primary-c:hover { background: #4096ff; }
+        .btn-gold-c { background: var(--gold); color: white; border: none; font-size: 0.72rem; font-weight: 600; letter-spacing: 1px; padding: 9px 20px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn-gold-c:hover { background: var(--gold-light); }
+        .btn-outline-c { background: transparent; color: #555; border: 1px solid #d9d9d9; font-size: 0.72rem; font-weight: 600; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn-outline-c:hover { border-color: var(--active-blue); color: var(--active-blue); }
+
+        /* scrollbar */
+        .main-content::-webkit-scrollbar { width: 4px; }
+        .main-content::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <h4><i class="fas fa-landmark me-1"></i> CITIZEN</h4>
+        <small>Sovereign Asset Portal</small>
+    </div>
+
+    <nav>
+        <div class="nav-section">Personal Treasury</div>
+        <a class="nav-link {% if request.endpoint == 'citizen.dashboard' %}active{% endif %}"
+           href="{{ url_for('citizen.dashboard') }}">
+            <i class="fas fa-chart-line"></i> Overview
+        </a>
+        <a class="nav-link {% if request.endpoint == 'citizen.my_properties' %}active{% endif %}"
+           href="{{ url_for('citizen.my_properties') }}">
+            <i class="fas fa-home"></i> My Land Assets
+        </a>
+
+        <div class="nav-section">Operations</div>
+        <a class="nav-link {% if request.endpoint == 'citizen.audit_trail' %}active{% endif %}"
+           href="{{ url_for('citizen.audit_trail') }}">
+            <i class="fas fa-exchange-alt"></i> Transfer Requests
+        </a>
+        <a class="nav-link {% if request.endpoint == 'citizen.transfer_history' %}active{% endif %}"
+           href="{{ url_for('citizen.transfer_history') }}">
+            <i class="fas fa-history"></i> Transfer History
+        </a>
+        <a class="nav-link {% if request.endpoint == 'citizen.dispute_filing' %}active{% endif %}"
+           href="{{ url_for('citizen.dispute_filing') }}">
+            <i class="fas fa-balance-scale"></i> Dispute Filing
+        </a>
+
+        <div class="nav-section">Public Registry</div>
+        <a class="nav-link {% if request.endpoint == 'citizen.market_listings' %}active{% endif %}"
+           href="{{ url_for('citizen.market_listings') }}">
+            <i class="fas fa-map-marked-alt"></i> Market Listings
+        </a>
+        <a class="nav-link {% if request.endpoint == 'citizen.taxation' %}active{% endif %}"
+           href="{{ url_for('citizen.taxation') }}">
+            <i class="fas fa-file-invoice-dollar"></i> Taxation &amp; Dues
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="/logout" class="btn-logout">
+            <i class="fas fa-power-off me-1"></i> Terminate Session
+        </a>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <div class="user-pill">Identity: <span>{{ user }}</span> &nbsp;|&nbsp; Protocol: Sovereign-L1</div>
+        <div class="status-dot"><i class="fas fa-circle me-1" style="font-size:0.5rem;"></i>LEDGER_SYNC_ACTIVE</div>
+    </div>
+    <div class="page-body">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

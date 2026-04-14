@@ -1,0 +1,155 @@
+{% extends "dashboard.html" %}
+{% block dashboard_only_metrics %}{% endblock %}
+{% block content_padding %}
+<style>
+    .rp-header h4 { font-family:'Inter',sans-serif; font-weight:700; color:#1a2332; font-size:1.4rem; margin:0 0 4px; letter-spacing:-0.3px; }
+    .rp-header p  { color:#888; font-size:0.78rem; margin:0; }
+    .divider { border:none; border-top:1px solid #eee; margin:0 0 24px; }
+
+    .s-card { background:white; border:1px solid #e8e8e8; border-radius:6px; overflow:hidden; margin-bottom:20px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+    .s-card-head { padding:14px 20px; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center; background:#fafafa; }
+    .s-card-head h6 { font-size:0.72rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#555; margin:0; }
+    .s-card-head span { font-size:0.68rem; color:#aaa; }
+
+    .f-label { font-size:0.62rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#888; display:block; margin-bottom:5px; }
+    .f-input { background:white; border:1px solid #d9d9d9; border-radius:4px; padding:9px 12px; font-size:0.85rem; color:#333; width:100%; outline:none; transition:0.2s; }
+    .f-input:focus { border-color:#1a2332; box-shadow:0 0 0 2px rgba(26,35,50,0.06); }
+    .f-input::placeholder { color:#bbb; }
+    .f-select { background:white; border:1px solid #d9d9d9; border-radius:4px; padding:8px 10px; font-size:0.8rem; color:#333; outline:none; }
+    .f-select:focus { border-color:#1a2332; }
+
+    .btn-submit { background:#1a2332; color:white; border:none; font-size:0.72rem; font-weight:600; letter-spacing:1px; padding:10px 20px; border-radius:4px; cursor:pointer; transition:0.2s; }
+    .btn-submit:hover { background:#2d3d55; }
+    .btn-update { background:#f0f4f8; color:#1a2332; border:1px solid #d9d9d9; font-size:0.68rem; font-weight:600; padding:5px 12px; border-radius:4px; cursor:pointer; transition:0.2s; }
+    .btn-update:hover { background:#e0e8f0; }
+
+    .r-table { width:100%; border-collapse:collapse; }
+    .r-table thead th { background:#f8f9fa; font-size:0.62rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#888; padding:11px 16px; border-bottom:1px solid #eee; text-align:left; }
+    .r-table tbody td { padding:12px 16px; font-size:0.82rem; color:#333; border-bottom:1px solid #f5f5f5; vertical-align:middle; }
+    .r-table tbody tr:last-child td { border-bottom:none; }
+    .r-table tbody tr:hover td { background:#fafbfc; }
+
+    .st-hearing  { background:#fff7e6; color:#7a4f00; font-size:0.65rem; font-weight:600; padding:3px 8px; border-radius:3px; }
+    .st-resolved { background:#f0faf0; color:#2d7a2d; font-size:0.65rem; font-weight:600; padding:3px 8px; border-radius:3px; }
+    .st-dismissed{ background:#fff0f0; color:#a33333; font-size:0.65rem; font-weight:600; padding:3px 8px; border-radius:3px; }
+    .src-citizen { background:#f5f0ff; color:#531dab; font-size:0.6rem; font-weight:600; padding:2px 7px; border-radius:3px; }
+    .src-admin   { background:#f0f4f8; color:#1a2332; font-size:0.6rem; font-weight:600; padding:2px 7px; border-radius:3px; }
+
+    code { color:#888; background:#f5f5f5; padding:2px 6px; border-radius:3px; font-size:0.7rem; }
+    .vs-tag { background:#f0f0f0; color:#555; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:3px; margin:0 6px; }
+
+    .flash-msg { background:#f0faf0; border:1px solid #b7eb8f; color:#2d7a2d; padding:10px 16px; border-radius:4px; font-size:0.82rem; margin-bottom:16px; }
+</style>
+
+<div class="rp-header" style="margin-bottom:20px;">
+    <h4>Dispute Tribunal</h4>
+    <p>Judicial resolution of conflicting blockchain inscriptions &nbsp;|&nbsp; {{ disputes|length }} total cases</p>
+</div>
+<hr class="divider">
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}{% for m in messages %}
+  <div class="flash-msg">{{ m }}</div>
+  {% endfor %}{% endif %}
+{% endwith %}
+
+<!-- Log New Dispute -->
+<div class="s-card">
+    <div class="s-card-head">
+        <h6>Log New Dispute</h6>
+        <span>Admin filed</span>
+    </div>
+    <div style="padding:20px;">
+        <form action="{{ url_for('tribunal.index') }}" method="POST">
+            <input type="hidden" name="create_case" value="1">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="f-label">Survey No.</label>
+                    <input type="text" name="survey_no" class="f-input" placeholder="e.g. 102/C" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="f-label">Claimant A (Plaintiff)</label>
+                    <input type="text" name="party_a" class="f-input" placeholder="Enter name" required>
+                </div>
+                <div class="col-md-1 text-center" style="padding-top:24px; color:#aaa; font-weight:700; font-size:0.8rem;">VS</div>
+                <div class="col-md-3">
+                    <label class="f-label">Claimant B (Defendant)</label>
+                    <input type="text" name="party_b" class="f-input" placeholder="Enter name" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="f-label">Reason</label>
+                    <input type="text" name="reason" class="f-input" placeholder="Brief reason...">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn-submit w-100">Open</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- All Disputes -->
+<div class="s-card">
+    <div class="s-card-head">
+        <h6>All Cases</h6>
+        <span>Includes citizen-filed &amp; admin-filed disputes</span>
+    </div>
+    <div class="table-responsive">
+        <table class="r-table">
+            <thead>
+                <tr>
+                    <th>Case ID</th>
+                    <th>Source</th>
+                    <th>Survey No.</th>
+                    <th>Conflicting Parties</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for case in disputes %}
+                <tr>
+                    <td><code>#TRB-{{ case.id }}</code></td>
+                    <td>
+                        {% if case.claimant_a and case.claimant_a != user %}
+                            <span class="src-citizen">Citizen</span>
+                        {% else %}
+                            <span class="src-admin">Admin</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight:600; color:#1a2332;">{{ case.survey_no or '—' }}</td>
+                    <td>
+                        <span style="color:#1a2332; font-weight:600;">{{ case.claimant_a or '—' }}</span>
+                        <span class="vs-tag">VS</span>
+                        <span style="color:#555; font-weight:600;">{{ case.claimant_b or '—' }}</span>
+                    </td>
+                    <td style="color:#666; font-size:0.78rem; max-width:160px;">{{ case.reason or '—' }}</td>
+                    <td>
+                        {% if case.status == 'RESOLVED' %}<span class="st-resolved">Resolved</span>
+                        {% elif case.status == 'DISMISSED' %}<span class="st-dismissed">Dismissed</span>
+                        {% else %}<span class="st-hearing">Hearing</span>{% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <form action="{{ url_for('tribunal.update_status', case_id=case.id) }}" method="POST" class="d-inline-flex gap-2 align-items-center">
+                            <select name="status" class="f-select">
+                                <option value="HEARING"   {% if case.status=='HEARING'   %}selected{% endif %}>Hearing</option>
+                                <option value="RESOLVED"  {% if case.status=='RESOLVED'  %}selected{% endif %}>Resolved</option>
+                                <option value="DISMISSED" {% if case.status=='DISMISSED' %}selected{% endif %}>Dismissed</option>
+                            </select>
+                            <button type="submit" class="btn-update">Update</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:36px; color:#bbb; font-size:0.82rem;">
+                        No active disputes in the judicial ledger.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

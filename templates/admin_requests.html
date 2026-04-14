@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tribunal & Handshake | Sovereign Registry</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        /* Light Theme Palette */
+        body { background: #f8f9fa; color: #212529; font-family: 'Inter', sans-serif; padding: 36px; }
+        
+        h2 { font-family: 'Cinzel', serif; color: #b8860b; font-size: 1.6rem; letter-spacing: 1px; margin: 0; }
+        .page-sub { color: #6c757d; font-size: 0.8rem; margin-top: 5px; font-weight: 500; }
+        
+        .section-title {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px;
+            text-transform: uppercase; color: #b8860b;
+            padding-left: 12px; border-left: 4px solid #b8860b;
+            margin-bottom: 20px;
+        }
+
+        .t-card {
+            background: #ffffff; border: 1px solid #dee2e6;
+            border-radius: 8px; margin-bottom: 28px; overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+
+        /* Table Styling */
+        .table { color: #495057 !important; margin: 0; }
+        .table thead th {
+            background: #f1f3f5 !important; color: #495057 !important;
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; border-bottom: 2px solid #dee2e6 !important;
+            padding: 14px 16px;
+        }
+        .table tbody td {
+            background: #ffffff !important; color: #212529 !important;
+            border-color: #f1f3f5 !important;
+            padding: 16px; font-size: 0.85rem; vertical-align: middle;
+        }
+        .table tbody tr:hover td { background: #fdfaf2 !important; }
+
+        code { color: #856404 !important; background: #fff3cd !important; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+
+        /* Buttons */
+        .btn-sign { background: #e6ffed; color: #1a7f37; border: 1px solid #acf2bd; font-size: 0.7rem; font-weight: 700; padding: 6px 14px; border-radius: 4px; transition: 0.2s; }
+        .btn-sign:hover { background: #dafbe1; color: #116629; }
+        
+        .btn-reject { background: #ffebe9; color: #cf222e; border: 1px solid #ffcfd1; font-size: 0.7rem; font-weight: 700; padding: 6px 14px; border-radius: 4px; transition: 0.2s; }
+        .btn-reject:hover { background: #ffdad8; color: #a40e1c; }
+        
+        .btn-msg { background: #f6f8fa; color: #24292f; border: 1px solid #d0d7de; font-size: 0.7rem; font-weight: 700; padding: 6px 14px; border-radius: 4px; transition: 0.2s; }
+        .btn-msg:hover { background: #f3f4f6; }
+
+        .btn-back { background: #ffffff; border: 1px solid #d0d7de; color: #57606a; font-size: 0.75rem; font-weight: 600; padding: 8px 18px; border-radius: 6px; text-decoration: none; transition: 0.2s; }
+        .btn-back:hover { border-color: #b8860b; color: #b8860b; background: #fdfaf2; }
+
+        /* Notifications (Light) */
+        .notif-panel { 
+            display: none; position: fixed; top: 75px; right: 30px; width: 360px; 
+            background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; 
+            z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-height: 400px; overflow-y: auto; 
+        }
+        .notif-item { padding: 14px 16px; border-bottom: 1px solid #f1f3f5; font-size: 0.82rem; color: #24292f; }
+        .notif-item:hover { background: #f8f9fa; }
+        .notif-item .time { font-size: 0.7rem; color: #6e7781; margin-top: 4px; }
+
+        /* Modal (Light) */
+        .modal-content { border-radius: 12px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+        .modal-header { background: #f8f9fa; border-bottom: 1px solid #dee2e6; border-radius: 12px 12px 0 0; }
+        .modal-title { font-family: 'Cinzel', serif; color: #b8860b; font-size: 1rem; }
+        .form-control-light { background: #ffffff !important; border: 1px solid #d0d7de !important; color: #212529 !important; padding: 12px; font-size: 0.88rem; border-radius: 6px !important; }
+        .form-control-light:focus { border-color: #b8860b !important; box-shadow: 0 0 0 3px rgba(184,134,11,0.1) !important; }
+        
+        .btn-send { background: #b8860b; color: #ffffff; border: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; padding: 10px 24px; border-radius: 6px; }
+
+        .divider { border-color: #dee2e6; margin: 32px 0; }
+        .badge-pending  { background: #fff8c5; color: #856404; border: 1px solid #f8e3a1; font-size: 0.65rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2>Tribunal &amp; Handshake Center</h2>
+            <p class="page-sub">Authorized Official: <span style="color:#b8860b; font-weight: 700;">{{ session.get('user') }}</span></p>
+        </div>
+        <div class="d-flex align-items-center gap-4">
+            <div class="notif-bell" onclick="toggleNotifications()">
+                <i class="fas fa-bell" style="font-size:1.4rem; color:#6e7781;"></i>
+                <span class="badge rounded-pill bg-danger" id="notifBadge" style="position:absolute; top:-5px; right:-8px; font-size:0.6rem; display:none;">0</span>
+            </div>
+            <a href="/dashboard" class="btn-back"><i class="fas fa-arrow-left me-2"></i> Exit to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="notif-panel" id="notifPanel">
+        <div class="p-3 border-bottom bg-light fw-bold small text-uppercase text-secondary" style="letter-spacing:1px;">Internal Alerts</div>
+        <div id="notifList"><div class="p-4 text-center text-muted small">Synchronizing...</div></div>
+    </div>
+
+    <div class="section-title">Forensic Handshake Queue</div>
+    <div class="t-card">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Asset Hash ID</th>
+                        <th>Property Details</th>
+                        <th>Origin Citizen</th>
+                        <th>Recipient Target</th>
+                        <th>Status</th>
+                        <th class="text-center">Verification Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transfers %}
+                    <tr id="row-{{ t.id }}">
+                        <td><code>#{{ t.property_id }}</code></td>
+                        <td>
+                            <div class="fw-bold">{{ t.location_name or 'Registry Asset' }}</div>
+                            <div class="small text-muted">Survey Map: {{ t.survey_no or 'Pending' }}</div>
+                        </td>
+                        <td class="fw-semibold text-primary">{{ t.sender }}</td>
+                        <td class="fw-semibold text-success">{{ t.receiver }}</td>
+                        <td><span class="badge-pending">UNDER REVIEW</span></td>
+                        <td class="text-center">
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn-sign" onclick="signHandshake('{{ t.id }}')">Sign & Approve</button>
+                                <button class="btn-reject" onclick="openReject('{{ t.id }}', '{{ t.sender }}')">Reject</button>
+                                <button class="btn-msg" onclick="openMessage('{{ t.id }}', '{{ t.sender }}')">Inquiry</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-5 text-muted small">No pending transfers found in your jurisdiction.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Tribunal Dispute Resolution</div>
+    <div class="t-card">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Complainant</th>
+                        <th>Claim/Reason</th>
+                        <th class="text-end pe-4">Legal Verdict</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in disputes %}
+                    <tr>
+                        <td><code>#{{ d.property_id }}</code></td>
+                        <td class="fw-bold">{{ d.citizen }}</td>
+                        <td class="small text-muted">{{ d.reason }}</td>
+                        <td class="text-end pe-4">
+                            <form action="{{ url_for('resolve_dispute', dispute_id=d.id) }}" method="POST" class="d-inline">
+                                <input type="hidden" name="action" value="Resolved">
+                                <button class="btn-sign px-3">Grant Resolution</button>
+                            </form>
+                            <form action="{{ url_for('resolve_dispute', dispute_id=d.id) }}" method="POST" class="d-inline ms-2">
+                                <input type="hidden" name="action" value="Dismissed">
+                                <button class="btn-reject px-3">Dismiss Claim</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center py-5 text-muted small">No active tribunal disputes recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="msgModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Official Correspondence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-muted mb-3">Sending to: <span id="msgCitizen" class="fw-bold text-dark"></span> | Ref: <span id="msgReqId" class="fw-bold text-dark"></span></p>
+                <textarea id="msgText" class="form-control-light w-100" rows="4" placeholder="Draft official inquiry..."></textarea>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn-send shadow-sm" onclick="sendMessage()">Send Dispatch</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger-subtle">
+                <h5 class="modal-title text-danger">Rejection Protocol</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-muted mb-3">Notify rejection to: <span id="rejectCitizen" class="fw-bold text-danger"></span></p>
+                <input type="hidden" id="rejectReqId">
+                <textarea id="rejectReason" class="form-control-light w-100" rows="3" placeholder="State reason for forensic rejection..."></textarea>
+            </div>
+            <div class="modal-footer bg-light">
+                <button class="btn btn-danger fw-bold py-2 px-4" onclick="submitReject()">Confirm Rejection</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentMsgReqId = null;
+    let currentRejectReqId = null;
+    const msgModal    = new bootstrap.Modal(document.getElementById('msgModal'));
+    const rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+
+    function signHandshake(reqId) {
+        if (!confirm("Digitally sign and approve this transfer?")) return;
+        fetch('/admin/approve_handshake', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `request_id=${reqId}`
+        }).then(r => r.json()).then(d => {
+            alert(d.message);
+            if (d.status === 'success') location.reload();
+        });
+    }
+
+    function openMessage(reqId, citizen) {
+        currentMsgReqId = reqId;
+        document.getElementById('msgCitizen').textContent = citizen;
+        document.getElementById('msgReqId').textContent   = `#${reqId}`;
+        msgModal.show();
+    }
+
+    function sendMessage() {
+        const msg = document.getElementById('msgText').value.trim();
+        if (!msg) return;
+        fetch('/admin/send_message', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `request_id=${currentMsgReqId}&message=${encodeURIComponent(msg)}`
+        }).then(r => r.json()).then(d => {
+            msgModal.hide();
+            alert(d.message);
+        });
+    }
+
+    function openReject(reqId, citizen) {
+        currentRejectReqId = reqId;
+        document.getElementById('rejectCitizen').textContent = citizen;
+        rejectModal.show();
+    }
+
+    function submitReject() {
+        const reason = document.getElementById('rejectReason').value.trim();
+        if (!reason) return;
+        fetch('/admin/reject_handshake', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `request_id=${currentRejectReqId}&reason=${encodeURIComponent(reason)}`
+        }).then(r => r.json()).then(d => {
+            rejectModal.hide();
+            alert(d.message);
+            if (d.status === 'success') location.reload();
+        });
+    }
+
+    function toggleNotifications() {
+        const panel = document.getElementById('notifPanel');
+        panel.classList.toggle('show');
+        if (panel.classList.contains('show')) loadNotifications();
+    }
+
+    function loadNotifications() {
+        fetch('/admin/notifications').then(r => r.json()).then(d => {
+            const list = document.getElementById('notifList');
+            if (!d.notifications?.length) {
+                list.innerHTML = '<div class="p-4 text-center text-muted small">No recent logs.</div>';
+                return;
+            }
+            list.innerHTML = d.notifications.map(n => `
+                <div class="notif-item">
+                    <div>${n.message}</div>
+                    <div class="time">${n.created_at}</div>
+                </div>
+            `).join('');
+        });
+    }
+
+    function pollUnread() {
+        fetch('/admin/unread_count').then(r => r.json()).then(d => {
+            const badge = document.getElementById('notifBadge');
+            if (d.count > 0) { badge.textContent = d.count; badge.style.display = 'block'; }
+            else { badge.style.display = 'none'; }
+        });
+    }
+    setInterval(pollUnread, 10000);
+</script>
+</body>
+</html>

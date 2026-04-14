@@ -1,0 +1,147 @@
+{% extends "citizen_base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4" style="font-family: 'Segoe UI', Roboto, sans-serif; background-color: #ffffff;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-dark pb-3">
+        <div>
+            <h3 class="fw-bold text-dark mb-1" style="letter-spacing: -1.5px; text-transform: uppercase;">Ledger Audit Protocol</h3>
+            <p class="text-muted small mb-0">
+                <span class="text-uppercase fw-bold text-primary" style="font-size: 0.7rem; letter-spacing: 1px;">Status:</span> 
+                <span class="fw-bold text-dark">Forensic Read-Only</span> 
+                <span class="mx-2 text-secondary">|</span>
+                <span class="text-dark small fw-bold text-uppercase" style="letter-spacing: 1px;">
+                    <i class="fas fa-microchip me-1"></i>Chain Height: {{ stats.height }}
+                </span>
+            </p>
+        </div>
+        <div class="bg-dark text-white p-2 px-3 shadow-sm" style="border: 2px solid #000; border-radius: 0;">
+            <small class="d-block fw-bold text-uppercase text-info" style="font-size: 0.55rem; letter-spacing: 2px;">Identity Proof</small>
+            <span class="fw-bold" style="font-family: 'Courier New', Courier, monospace;">{{ user }}</span>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="p-3 bg-white d-flex align-items-center card-hover-effect" style="border-left: 5px solid #4f46e5; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0;">
+                <div class="me-3 p-3 sync-icon indigo-pulse" style="color: #4f46e5; background-color: #f5f3ff; border-radius: 8px;">
+                    <i class="fas fa-server fa-lg"></i>
+                </div>
+                <div>
+                    <label class="fw-bold text-uppercase d-block mb-0" style="font-size: 0.65rem; color: #4f46e5; letter-spacing: 1px;">Active Shards</label>
+                    <h4 class="fw-bold mb-0" style="color: #334155;">{{ stats.shards }} Nodes</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="p-3 bg-white d-flex align-items-center card-hover-effect" style="border-left: 5px solid #06b6d4; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0;">
+                <div class="me-3 p-3 sync-icon cyan-pulse" style="color: #06b6d4; background-color: #ecfeff; border-radius: 8px;">
+                    <i class="fas fa-fingerprint fa-lg"></i>
+                </div>
+                <div>
+                    <label class="fw-bold text-uppercase d-block mb-0" style="font-size: 0.65rem; color: #06b6d4; letter-spacing: 1px;">Network Entry Hash</label>
+                    <h4 class="fw-bold mb-0" style="font-family: 'Courier New', Courier, monospace; font-size: 0.95rem; color: #334155;">{{ stats.hash }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div class="input-group" style="max-width: 500px;">
+            <span class="input-group-text bg-white border-end-0" style="border: 1px solid #e2e8f0;">
+                <i class="fas fa-search text-primary"></i>
+            </span>
+            <input type="text" id="ledgerSearch" class="form-control border-start-0" placeholder="Search by Block ID or Hash signature..." style="border: 1px solid #e2e8f0; font-size: 0.9rem;">
+        </div>
+    </div>
+
+    
+
+    <div class="table-responsive">
+        <table class="table align-middle" id="forensicTable" style="border-collapse: separate; border-spacing: 0;">
+            <thead>
+                <tr style="border-bottom: 3px solid #3b82f6; background-color: #f8fafc;">
+                    <th class="ps-3 py-3 text-primary fw-bolder text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px; border: none;">Block Index</th>
+                    <th class="text-secondary fw-bolder text-uppercase" style="font-size: 0.75rem; border: none;">Verification Epoch</th>
+                    <th class="text-secondary fw-bolder text-uppercase" style="font-size: 0.75rem; border: none;">Cryptographic Hash</th>
+                    <th class="text-secondary fw-bolder text-uppercase" style="font-size: 0.75rem; border: none;">Parent Pointer</th>
+                    <th class="text-end pe-3 text-secondary fw-bolder text-uppercase" style="font-size: 0.75rem; border: none;">Verdict</th>
+                </tr>
+            </thead>
+            <tbody id="ledgerBody">
+                {% for block in global_activity %}
+                <tr class="ledger-row" style="border-bottom: 1px solid #cbd5e1;">
+                    <td class="ps-3 fw-bold py-4 block-idx" style="font-family: 'Courier New', Courier, monospace; color: #2563eb; border: none;">
+                        #{{ block.index }}
+                    </td>
+                    <td style="font-size: 0.85rem; color: #64748b; border: none;">
+                        {{ block.timestamp }}
+                    </td>
+                    <td class="block-hash" style="border: none;">
+                        <code style="font-size: 0.8rem; background: #f1f5f9; color: #1d4ed8; padding: 4px 8px; border: 1px solid #94a3b8; border-radius: 4px;">{{ block.hash[:32] }}...</code>
+                    </td>
+                    <td style="border: none;">
+                        <code style="font-size: 0.75rem; color: #94a3b8; background: none;">{{ block.previous_hash[:16] }}...</code>
+                    </td>
+                    <td class="text-end pe-3" style="border: none;">
+                        <span class="badge" style="background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 4px; font-size: 0.65rem; letter-spacing: 1px; font-weight: 800;">
+                            <i class="fas fa-check-double me-1"></i>SECURED
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Live Search Interactivity
+    document.getElementById('ledgerSearch').addEventListener('keyup', function() {
+        let filter = this.value.toUpperCase();
+        let rows = document.querySelectorAll('.ledger-row');
+        
+        rows.forEach(row => {
+            let indexText = row.querySelector('.block-idx').textContent.toUpperCase();
+            let hashText = row.querySelector('.block-hash').textContent.toUpperCase();
+            
+            if (indexText.indexOf(filter) > -1 || hashText.indexOf(filter) > -1) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
+</script>
+
+<style scoped>
+    /* Icon Pulse Animations */
+    @keyframes pulse-indigo {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+    }
+    @keyframes pulse-cyan {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+    }
+
+    .indigo-pulse { animation: pulse-indigo 3s infinite; }
+    .cyan-pulse { animation: pulse-cyan 3s infinite alternate; }
+
+    /* Table & Card Clean-up */
+    #forensicTable td, #forensicTable th { border: none !important; }
+    #forensicTable tbody tr { border-bottom: 1px solid #e2e8f0 !important; }
+    #forensicTable tbody tr:hover { background-color: #f8fafc !important; transition: 0.15s ease-in-out; }
+
+    .card-hover-effect:hover {
+        background-color: #fafbfc !important;
+        transition: 0.3s;
+    }
+
+    code { word-break: break-all; }
+    #forensicTable th, #forensicTable td { color: #475569 !important; }
+    .table > :not(caption) > * > * { box-shadow: none !important; background-color: transparent; }
+</style>
+{% endblock %}

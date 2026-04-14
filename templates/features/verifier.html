@@ -1,0 +1,174 @@
+{% extends "dashboard.html" %}
+{% block dashboard_only_metrics %}{% endblock %}
+{% block content_padding %}
+<style>
+    .v-card { background: white; border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .v-card-head { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+    .v-card-head h6 { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; margin: 0; }
+    .f-input { background: white; border: 1px solid #d9d9d9; border-radius: 4px; padding: 10px 14px; font-size: 0.85rem; color: #333; width: 100%; outline: none; transition: 0.2s; }
+    .f-input:focus { border-color: #1a2332; box-shadow: 0 0 0 2px rgba(26,35,50,0.06); }
+    .f-input::placeholder { color: #bbb; }
+    .btn-verify { background: #1a2332; color: white; border: none; font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; padding: 11px 24px; border-radius: 4px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+    .btn-verify:hover { background: #2d3d55; }
+    .result-box { border-left: 4px solid #ccc; padding: 16px 20px; border-radius: 0 6px 6px 0; background: white; border-top: 1px solid #e8e8e8; border-right: 1px solid #e8e8e8; border-bottom: 1px solid #e8e8e8; }
+    .result-box.validated { border-left-color: #2d7a2d; }
+    .result-box.not-found { border-left-color: #cf1322; }
+    .badge-validated { background: #f0faf0; color: #2d7a2d; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 3px; }
+    .badge-notfound  { background: #fff0f0; color: #cf1322; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 3px; }
+    .badge-awaiting  { background: #f5f5f5; color: #888; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 3px; }
+    .detail-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #aaa; display: block; margin-bottom: 4px; }
+    .detail-value { font-size: 0.82rem; font-weight: 600; color: #1a2332; }
+    .hash-val { font-size: 0.7rem; color: #555; background: #f5f5f5; padding: 4px 8px; border-radius: 3px; word-break: break-all; font-family: monospace; }
+    .c-table { width: 100%; border-collapse: collapse; }
+    .c-table thead th { background: #f8f9fa; font-size: 0.62rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #888; padding: 11px 16px; border-bottom: 1px solid #eee; text-align: left; }
+    .c-table tbody td { padding: 11px 16px; font-size: 0.82rem; color: #333; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+    .c-table tbody tr:last-child td { border-bottom: none; }
+    .c-table tbody tr:hover td { background: #fafbfc; }
+    code { color: #555; background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 0.72rem; font-family: monospace; }
+    .stat-pill { background: #f0f4f8; color: #1a2332; font-size: 0.68rem; font-weight: 600; padding: 4px 10px; border-radius: 3px; border: 1px solid #e0e8f0; }
+    .page-divider { border-color: #eee; margin-bottom: 22px; }
+</style>
+
+<div class="mb-3">
+    <h4 style="font-weight:700; color:#1a2332; font-size:1.3rem; margin:0;">Forensic Verifier</h4>
+    <p style="color:#888; font-size:0.78rem; margin-top:3px;">Deep-packet inspection of Blockchain Shards and Hash Integrity</p>
+</div>
+<hr class="page-divider">
+
+<!-- Search -->
+<div class="v-card">
+    <div class="v-card-head">
+        <h6>Query Ledger by Survey ID or Hash</h6>
+    </div>
+    <div style="padding:18px 20px;">
+        <div class="d-flex gap-2">
+            <input type="text" id="queryInput" class="f-input"
+                   placeholder="Enter Survey Number, Owner Name or Block Hash..."
+                   value="{{ query or '' }}">
+            <button class="btn-verify" onclick="doVerify()">Verify</button>
+        </div>
+    </div>
+</div>
+
+<!-- Result -->
+{% if query %}
+<div class="result-box {{ 'validated' if status == 'VALIDATED' else 'not-found' }} mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <strong style="font-size:0.9rem; color:#1a2332;">Verification: {{ query }}</strong>
+        {% if status == 'VALIDATED' %}
+            <span class="badge-validated">VALIDATED</span>
+        {% elif status == 'NOT_FOUND' %}
+            <span class="badge-notfound">NOT_FOUND</span>
+        {% else %}
+            <span class="badge-awaiting">AWAITING INPUT</span>
+        {% endif %}
+    </div>
+
+    {% if status == 'VALIDATED' and result %}
+    <div class="row g-3">
+        <div class="col-md-2">
+            <span class="detail-label">Block Index</span>
+            <span class="detail-value">#{{ result.get('index', 'N/A') }}</span>
+        </div>
+        <div class="col-md-3">
+            <span class="detail-label">Survey / Land ID</span>
+            <span class="detail-value">
+                {{ result.get('data', {}).get('land_id') or
+                   result.get('data', {}).get('survey', 'N/A') }}
+            </span>
+        </div>
+        <div class="col-md-3">
+            <span class="detail-label">Owner / Pattadar</span>
+            <span class="detail-value">
+                {{ result.get('data', {}).get('owner') or
+                   result.get('data', {}).get('pattadar', 'N/A') }}
+            </span>
+        </div>
+        <div class="col-md-2">
+            <span class="detail-label">Area / Extent</span>
+            <span class="detail-value">
+                {{ result.get('data', {}).get('extent') or
+                   result.get('data', {}).get('area', 'N/A') }}
+            </span>
+        </div>
+        <div class="col-md-2">
+            <span class="detail-label">District</span>
+            <span class="detail-value">
+                {{ result.get('data', {}).get('district') or
+                   result.get('data', {}).get('location', 'N/A') }}
+            </span>
+        </div>
+        <div class="col-12">
+            <span class="detail-label">Cryptographic Hash</span>
+            <div class="hash-val">{{ result.get('hash', 'N/A') }}</div>
+        </div>
+    </div>
+    {% else %}
+    <p style="color:#888; margin:0; font-size:0.83rem;">
+        No record found on the blockchain matching this query.
+    </p>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Audit Trail -->
+<div class="v-card">
+    <div class="v-card-head">
+        <h6>Cryptographic Audit Trail</h6>
+        <div class="d-flex gap-2">
+            <span class="stat-pill">Total Acres: {{ telemetry.verified_acres }}</span>
+            <span class="stat-pill">Blocks: {{ telemetry.active_shards }}</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table">
+            <thead>
+                <tr>
+                    <th>Block</th>
+                    <th>Survey / Land ID</th>
+                    <th>Owner</th>
+                    <th>District</th>
+                    <th>Previous Hash</th>
+                    <th>Block Hash (Merkle Root)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for block in chain|reverse %}
+                {% set d = block.get('data', {}) %}
+                <tr>
+                    <td><strong style="color:#1890ff;">#{{ block.get('index', 0) }}</strong></td>
+                    <td>
+                        <span style="font-weight:600; color:#1a2332;">
+                            {% if block.get('index') == 1 %}
+                                <span style="font-size:0.72rem; background:#f0f4f8; padding:2px 7px; border-radius:3px;">GENESIS</span>
+                            {% else %}
+                                {{ d.get('land_id') or d.get('survey', 'N/A') }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td style="color:#555; font-size:0.8rem;">
+                        {{ d.get('owner') or d.get('pattadar', '—') }}
+                    </td>
+                    <td style="color:#555; font-size:0.8rem;">
+                        {{ d.get('district') or d.get('location', '—') }}
+                    </td>
+                    <td><code>{{ block.get('previous_hash', '0')[:28] }}...</code></td>
+                    <td><code style="color:#1890ff;">{{ block.get('hash', '0')[:28] }}...</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function doVerify() {
+    const q = document.getElementById('queryInput').value.trim();
+    if (!q) { alert('Please enter a survey number, owner name, or block hash.'); return; }
+    window.location.href = '{{ url_for("verifier.index") }}?query=' + encodeURIComponent(q);
+}
+document.getElementById('queryInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doVerify();
+});
+</script>
+{% endblock %}

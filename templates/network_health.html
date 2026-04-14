@@ -1,0 +1,20 @@
+{% extends "dashboard.html" %}
+{% block content_padding %}
+<div class="card p-4 border-0 shadow-sm">
+    <h4 class="mb-4">Active Network Shards</h4>
+    <table class="table">
+        <thead><tr><th>Node ID</th><th>Status</th><th>IP Address</th></tr></thead>
+        <tbody>
+            {% for node in nodes %}
+            <tr>
+                <td>{{ node.id }}</td>
+                <td><span class="badge bg-success">Operational</span></td>
+                <td>{{ node.ip_address or '127.0.0.1' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center">No nodes registered in the network.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

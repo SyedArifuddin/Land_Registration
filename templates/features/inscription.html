@@ -1,0 +1,87 @@
+{% extends "dashboard.html" %}
+
+{% block dashboard_only_metrics %}{% endblock %}
+
+{% block content_padding %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+    <div>
+        <h3 class="fw-bold" style="font-family: 'Playfair Display'; color: #001e3c;">📜 Land Inscription</h3>
+        <p class="text-muted small mb-0">Digital Inscription into the Telangana Sovereign Blockchain Ledger.</p>
+    </div>
+    <div class="text-end">
+        <span class="badge bg-dark px-3 py-2">NODE: TS-HYD-01</span>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success border-0 shadow-sm mb-4">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-bold text-uppercase mb-4" style="letter-spacing: 1px;">Registry Details</h6>
+            <form method="POST">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Pattadar Name</label>
+                        <input type="text" name="pattadar" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Survey Number</label>
+                        <input type="text" name="survey_no" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Extent (Acres)</label>
+                        <input type="text" name="extent" class="form-control" placeholder="e.g. 2.5">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">District</label>
+                        <select name="district" class="form-select">
+                            <option>Hyderabad</option>
+                            <option>Rangareddy</option>
+                            <option>Medchal</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Spatial Coordinates</label>
+                        <input type="text" id="coords" name="coords" class="form-control bg-light" readonly placeholder="Click on the map to select location">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mt-4 fw-bold">COMMIT TO LEDGER</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <h6 class="fw-bold text-uppercase mb-3" style="letter-spacing: 1px;">Spatial Mapping</h6>
+            <div id="map" style="height: 400px; border-radius: 8px; border: 2px solid #dee2e6;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map').setView([17.3850, 78.4867], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap | Govt of Telangana'
+    }).addTo(map);
+
+    var marker;
+    map.on('click', function(e) {
+        var lat = e.latlng.lat.toFixed(6);
+        var lng = e.latlng.lng.toFixed(6);
+        document.getElementById('coords').value = lat + ", " + lng;
+        
+        if (marker) { map.removeLayer(marker); }
+        marker = L.marker([lat, lng]).addTo(map);
+    });
+</script>
+{% endblock %}

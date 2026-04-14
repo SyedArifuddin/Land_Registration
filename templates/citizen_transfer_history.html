@@ -1,0 +1,145 @@
+{% extends "citizen_base.html" %}
+{% block content %}
+
+<div class="mb-4">
+    <h4 style="font-weight:700; color:#1a1a1a; margin:0;">My Transfer History</h4>
+    <p style="color:#888; font-size:0.78rem; margin-top:3px;">All past approved and rejected land transfers for your account</p>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card green">
+            <small>Approved Transfers</small>
+            <h4 style="color:#52c41a;">{{ approved_count }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#ff4d4f;">
+            <small>Rejected Transfers</small>
+            <h4 style="color:#ff4d4f;">{{ rejected_count }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#faad14;">
+            <small>Pending</small>
+            <h4 style="color:#faad14;">{{ pending_count }}</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#722ed1;">
+            <small>Total Requests</small>
+            <h4 style="color:#722ed1;">{{ all_transfers|length }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Filter tabs -->
+<div style="display:flex; gap:8px; margin-bottom:16px;">
+    <button class="filter-btn active" onclick="filterHistory('all', this)">All</button>
+    <button class="filter-btn" onclick="filterHistory('Approved', this)">Approved</button>
+    <button class="filter-btn" onclick="filterHistory('Rejected', this)">Rejected</button>
+    <button class="filter-btn" onclick="filterHistory('Pending', this)">Pending</button>
+</div>
+
+<!-- Transfer history table -->
+<div class="c-card">
+    <div class="c-card-header">
+        <span class="c-card-title">Transfer Records</span>
+        <span class="b-info">{{ all_transfers|length }} total</span>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table" id="historyTable">
+            <thead>
+                <tr>
+                    <th>Req ID</th>
+                    <th>Property</th>
+                    <th>Direction</th>
+                    <th>Other Party</th>
+                    <th>Assigned Admin</th>
+                    <th>Blockchain Hash</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in all_transfers %}
+                <tr class="history-row" data-status="{{ t.status }}">
+                    <td><code style="color:#1890ff;">#{{ t.id }}</code></td>
+                    <td style="font-weight:600;">Property #{{ t.property_id }}</td>
+                    <td>
+                        {% if t.sender == user %}
+                            <span style="color:#ff4d4f; font-size:0.75rem; font-weight:600;">
+                                <i class="fas fa-arrow-right me-1"></i> Sent
+                            </span>
+                        {% else %}
+                            <span style="color:#52c41a; font-size:0.75rem; font-weight:600;">
+                                <i class="fas fa-arrow-left me-1"></i> Received
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#333;">
+                        {% if t.sender == user %}
+                            → <strong>{{ t.receiver }}</strong>
+                        {% else %}
+                            ← <strong>{{ t.sender }}</strong>
+                        {% endif %}
+                    </td>
+                    <td style="color:#b8860b;">{{ t.admin_name or '—' }}</td>
+                    <td>
+                        {% if t.property_hash %}
+                        <code style="font-size:0.68rem; color:#0958d9; background:#f0f7ff; padding:2px 6px; border-radius:3px; cursor:pointer;"
+                              onclick="alert('SHA-256 Proof:\n{{ t.property_hash }}')">
+                            {{ t.property_hash[:18] }}...
+                        </code>
+                        {% else %}
+                        <span style="color:#bbb; font-size:0.75rem;">Not generated</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if t.status == 'Approved' %}
+                        <span class="b-approved">Approved</span>
+                        {% elif t.status == 'Rejected' %}
+                        <span class="b-rejected">Rejected</span>
+                        {% else %}
+                        <span class="b-pending">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-5" style="color:#bbb;">
+                        <i class="fas fa-history fa-2x mb-2 d-block" style="color:#ddd;"></i>
+                        No transfer history found for your account.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .filter-btn {
+        background: white; border: 1px solid #d9d9d9; color: #555;
+        font-size: 0.72rem; font-weight: 600; padding: 6px 16px;
+        border-radius: 20px; cursor: pointer; transition: 0.2s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+        background: #1890ff; border-color: #1890ff; color: white;
+    }
+</style>
+
+<script>
+function filterHistory(status, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.history-row').forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

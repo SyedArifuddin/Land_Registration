@@ -1,0 +1,66 @@
+{% extends "dashboard.html" %}
+
+{% block content_padding %}
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+    <div>
+        <h3 class="fw-bold" style="font-family: 'Playfair Display'; color: #001e3c;">🔒 Digital Deed Vault</h3>
+        <p class="text-muted small mb-0">Immutable storage of verified Land Titles and Judicial Decrees.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <form action="{{ url_for('vault.index') }}" method="GET" class="d-flex">
+            <input type="text" name="search" class="form-control form-control-sm me-2" placeholder="Search Survey ID..." value="{{ request.args.get('search', '') }}">
+            <button type="submit" class="btn btn-outline-dark btn-sm">Search</button>
+        </form>
+
+        <a href="{{ url_for('vault.export_full_registry', search=request.args.get('search', '')) }}" class="btn btn-dark btn-sm">
+            <i class="bi bi-printer me-2"></i>Export Registry
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr class="small text-muted text-uppercase">
+                    <th class="ps-4">Type</th>
+                    <th>Survey ID</th>
+                    <th>Pattadar (Owner)</th>
+                    <th>Status</th>
+                    <th>Blockchain Hash</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for deed in deeds %}
+                <tr>
+                    <td class="ps-4">
+                        <span class="badge {% if deed.cert_type == 'DECREE' %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+                            {{ deed.cert_type }}
+                        </span>
+                    </td>
+                    <td class="fw-bold">{{ deed.survey_id }}</td>
+                    <td>{{ deed.owner }}</td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success">
+                            <i class="bi bi-patch-check-fill me-1"></i> {{ deed.status }}
+                        </span>
+                    </td>
+                    <td><code class="small text-muted">{{ deed.block_hash[:16] }}...</code></td>
+                    <td class="text-end pe-4">
+                        <a href="{{ url_for('vault.view_deed', survey_id=deed.survey_id) }}" class="btn btn-sm btn-outline-dark">View Details</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="bi bi-safe2 fs-1 d-block mb-3"></i>
+                        No deeds found in the vault.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

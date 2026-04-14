@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Auth | Govt of Telangana</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #000c17;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(184,134,11,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(184,134,11,0.04) 0%, transparent 60%);
+        }
+        .auth-box {
+            width: 100%;
+            max-width: 400px;
+            padding: 44px 40px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(184,134,11,0.3);
+            text-align: center;
+        }
+        .brand {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            color: #b8860b;
+            letter-spacing: 3px;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+        .qr-wrapper {
+            background: white;
+            padding: 14px;
+            display: inline-block;
+            margin-bottom: 28px;
+            border: 1px solid rgba(184,134,11,0.2);
+        }
+        .qr-wrapper img { display: block; }
+        .status-box {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(184,134,11,0.2);
+            padding: 12px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(184,134,11,0.3);
+            border-top-color: #b8860b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .status-text {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #b8860b;
+            text-transform: uppercase;
+        }
+        .ip-info {
+            font-size: 0.62rem;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 1px;
+        }
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(184,134,11,0.3), transparent);
+            margin: 24px 0;
+        }
+        .scan-hint {
+            font-size: 0.68rem;
+            color: rgba(255,255,255,0.35);
+            line-height: 1.6;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <div class="brand">Sovereign Ledger</div>
+        
+
+        <div class="qr-wrapper">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://{{ server_ip }}:5000/scan/DEV-HYD-99"
+                 alt="Secure Token" width="180" height="180">
+        </div>
+
+        <div class="status-box">
+            <div class="spinner" id="spinner"></div>
+            <span class="status-text" id="status-text">Waiting for Encrypted Sync</span>
+        </div>
+
+        <div class="ip-info">Your IP: {{ server_ip }} &nbsp;|&nbsp; Node: TS-HYD-01</div>
+
+        <div class="divider"></div>
+        <p class="scan-hint">
+            Scan the QR code with your mobile device to authorize this workstation session.
+        </p>
+    </div>
+
+    <script>
+        const pollAuth = setInterval(() => {
+            fetch('/check_auth')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        clearInterval(pollAuth);
+                        document.getElementById('spinner').style.display = 'none';
+                        const st = document.getElementById('status-text');
+                        st.textContent = '✓ IDENTITY VERIFIED';
+                        st.style.color = '#52c41a';
+                        setTimeout(() => window.location.href = '/dashboard', 800);
+                    }
+                })
+                .catch(err => console.error('Sync Error:', err));
+        }, 2000);
+    </script>
+</body>
+</html>

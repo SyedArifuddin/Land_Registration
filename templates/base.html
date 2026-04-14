@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sovereign GRP | TS-Dharani</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root { --navy: #001529; --gold: #b39359; }
+        body { display: flex; height: 100vh; background: #f4f7f9; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        .sidebar { width: 280px; background: var(--navy); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+        .nav-label { padding: 20px 25px 5px; font-size: 0.65rem; color: #4e6a85; text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; }
+        .nav-link-custom { padding: 12px 25px; color: #a6adb4; text-decoration: none; display: flex; align-items: center; transition: 0.2s; }
+        .nav-link-custom i { margin-right: 12px; font-size: 1.1rem; }
+        .nav-link-custom:hover { background: #1890ff; color: white; }
+        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; }
+        .sidebar-brand { padding: 25px; background: #000c17; border-bottom: 1px solid #ffffff1a; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <h5 style="color: var(--gold); margin:0; letter-spacing: 1px;">TS-DHARANI</h5>
+        <small class="opacity-50">GOVERNANCE PORTAL</small>
+    </div>
+
+    <div class="nav-label">Core Registry</div>
+    <a href="{{ url_for('dashboard') }}" class="nav-link-custom"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="{{ url_for('inscription.index') }}" class="nav-link-custom"><i class="bi bi-journal-text"></i> Land Inscription</a>
+    <a href="{{ url_for('verifier.index') }}" class="nav-link-custom"><i class="bi bi-shield-check"></i> Forensic Verifier</a>
+    
+    <div class="nav-label">Analytics & Mapping</div>
+    <a href="{{ url_for('mapping.index') }}" class="nav-link-custom"><i class="bi bi-geo-alt"></i> District Mapping</a>
+    <a href="{{ url_for('tribunal.index') }}" class="nav-link-custom"><i class="bi bi-hammer"></i> Dispute Tribunal</a>
+
+    <div class="nav-label">Management</div>
+    <a href="{{ url_for('vault.index') }}" class="nav-link-custom"><i class="bi bi-safe"></i> Digital Deed Vault</a>
+    <a href="#" class="nav-link-custom"><i class="bi bi-activity"></i> Network Health</a>
+
+    <div class="mt-auto p-3 border-top border-secondary">
+        <a href="{{ url_for('logout') }}" class="nav-link-custom text-danger fw-bold"><i class="bi bi-lock"></i> Logout</a>
+    </div>
+</div>
+
+<div class="main-content">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

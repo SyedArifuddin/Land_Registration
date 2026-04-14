@@ -1,0 +1,240 @@
+{% extends "citizen_base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 style="font-weight:700; color:#1a1a1a; margin:0;">Transfer Requests</h4>
+        <p style="color:#888; font-size:0.78rem; margin-top:3px;">Initiate and track land transfer requests</p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <!-- Notification Bell -->
+        <div style="position:relative; cursor:pointer;" onclick="toggleNotif()">
+            <i class="fas fa-bell" style="font-size:1.1rem; color:#888;"></i>
+            {% if notif_count > 0 %}
+            <span id="notifBadge" style="position:absolute; top:-5px; right:-6px; background:#ff4d4f; color:white; font-size:0.55rem; font-weight:700; padding:2px 5px; border-radius:10px;">
+                {{ notif_count }}
+            </span>
+            {% endif %}
+        </div>
+        <button class="btn-gold-c" data-bs-toggle="modal" data-bs-target="#handshakeModal">
+            <i class="fas fa-handshake me-1"></i> Initiate Transfer
+        </button>
+    </div>
+</div>
+
+<!-- Notification Panel -->
+<div id="notifPanel" style="display:none; position:fixed; top:60px; right:20px; width:340px; background:white; border:1px solid #e8e8e8; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.12); z-index:999; max-height:380px; overflow-y:auto;">
+    <div style="padding:12px 16px; border-bottom:1px solid #f0f0f0; font-size:0.65rem; font-weight:700; letter-spacing:2px; color:#888; text-transform:uppercase;">
+        Notifications
+    </div>
+    <div id="notifList"><div style="padding:20px; text-align:center; color:#bbb; font-size:0.78rem;">Loading...</div></div>
+</div>
+
+<!-- Registered Assets -->
+<div class="c-card mb-4">
+    <div class="c-card-header">
+        <span class="c-card-title">Registered Assets</span>
+        <span class="b-info">{{ history|length }} records</span>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table">
+            <thead>
+                <tr>
+                    <th>Survey No</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Hash Proof</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td><code style="color:#1890ff;">{{ h.survey_no }}</code></td>
+                    <td>{{ h.location_name }}</td>
+                    <td>
+                        {% if h.property_hash %}
+                        <span class="b-approved">Verified</span>
+                        {% else %}
+                        <span class="b-pending">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <code style="font-size:0.7rem; color:#888; background:#f5f5f5; padding:2px 6px; border-radius:3px; cursor:pointer;"
+                              onclick="alert('SHA-256: {{ h.property_hash or 'Not yet generated' }}')">
+                            {{ h.property_hash[:20] if h.property_hash else 'N/A' }}...
+                        </code>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-4" style="color:#bbb;">
+                        No assets registered to this account.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Transfer Tracker -->
+<div class="c-card">
+    <div class="c-card-header">
+        <span class="c-card-title">Transfer Tracker</span>
+        <span class="b-info">{{ my_requests|length }} requests</span>
+    </div>
+    <div class="table-responsive">
+        <table class="c-table">
+            <thead>
+                <tr>
+                    <th>Req ID</th>
+                    <th>Property</th>
+                    <th>Recipient</th>
+                    <th>Assigned Admin</th>
+                    <th>Status</th>
+                    <th>Admin Communications</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in my_requests %}
+                <tr>
+                    <td><code style="color:#1890ff;">#{{ req.id }}</code></td>
+                    <td style="font-weight:600;">Property #{{ req.property_id }}</td>
+                    <td style="color:#52c41a;">{{ req.receiver }}</td>
+                    <td style="color:#b8860b;">{{ req.admin_name or '—' }}</td>
+                    <td>
+                        {% if req.status == 'Approved' %}
+                        <span class="b-approved">Approved</span>
+                        {% elif req.status == 'Rejected' %}
+                        <span class="b-rejected">Rejected</span>
+                        {% else %}
+                        <span class="b-pending">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if req.messages %}
+                        {% for msg in req.messages %}
+                        <div style="background:#f0f7ff; border-left:3px solid #1890ff; padding:6px 10px; border-radius:0 4px 4px 0; margin-bottom:4px; font-size:0.75rem;">
+                            <div style="color:#888; font-size:0.65rem; margin-bottom:2px;">
+                                From {{ msg.from_admin }} · {{ msg.created_at }}
+                            </div>
+                            {{ msg.message }}
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <span style="color:#bbb; font-size:0.75rem;">No messages</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4" style="color:#bbb;">
+                        No transfer requests submitted yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Handshake Modal -->
+<div class="modal fade" id="handshakeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0" style="background:#001529;">
+                <h6 class="modal-title text-white fw-bold" style="font-size:0.85rem; letter-spacing:1px;">
+                    <i class="fas fa-handshake me-2" style="color:#b8860b;"></i>
+                    Initiate Transfer Handshake
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="f-label">1. Select Administrator</label>
+                    <select id="t_admin" class="f-select">
+                        <option value="" disabled selected>Choose an official...</option>
+                        {% for admin in administrators %}
+                        <option value="{{ admin.id }}">{{ admin.username }} — ID: {{ admin.id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="f-label">2. Property ID to Transfer</label>
+                    <input type="text" id="t_prop_id" class="f-input" placeholder="Enter Survey Number (e.g. 123) or Property ID">
+                </div>
+                <div class="mb-3">
+                    <label class="f-label">3. Recipient Username</label>
+                    <input type="text" id="t_receiver" class="f-input" placeholder="Recipient's registered username">
+                </div>
+                <div style="background:#fffbe6; border:1px solid #ffe58f; border-radius:4px; padding:10px 14px; font-size:0.75rem; color:#665000; margin-bottom:16px;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Request will be routed to the selected administrator's queue. Ownership updates only after their cryptographic signature.
+                </div>
+                <div id="handshakeResult" style="display:none; margin-bottom:12px;"></div>
+                <button class="btn-gold-c w-100" style="padding:12px;" onclick="sendHandshake()">
+                    Submit Handshake Request
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function sendHandshake() {
+    const payload = {
+        property_id:   document.getElementById('t_prop_id').value,
+        receiver_name: document.getElementById('t_receiver').value,
+        admin_id:      document.getElementById('t_admin').value
+    };
+    if (!payload.property_id || !payload.receiver_name || !payload.admin_id) {
+        alert('Please fill all fields.'); return;
+    }
+    fetch('/citizen/request_transfer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+        const res = document.getElementById('handshakeResult');
+        res.style.display = 'block';
+        res.innerHTML = d.status === 'success'
+            ? '<div style="color:#52c41a; background:#f6ffed; border:1px solid #b7eb8f; padding:8px 12px; border-radius:4px; font-size:0.8rem;">✅ ' + d.message + '</div>'
+            : '<div style="color:#cf1322; background:#fff1f0; border:1px solid #ffa39e; padding:8px 12px; border-radius:4px; font-size:0.8rem;">❌ ' + d.message + '</div>';
+        if (d.status === 'success') setTimeout(() => location.reload(), 1200);
+    });
+}
+
+function toggleNotif() {
+    const p = document.getElementById('notifPanel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    if (p.style.display === 'block') loadNotif();
+}
+
+function loadNotif() {
+    fetch('/citizen/notifications')
+    .then(r => r.json())
+    .then(d => {
+        const list = document.getElementById('notifList');
+        if (!d.notifications || d.notifications.length === 0) {
+            list.innerHTML = '<div style="padding:20px; text-align:center; color:#bbb; font-size:0.78rem;">No notifications yet.</div>';
+            return;
+        }
+        list.innerHTML = d.notifications.map(n => `
+            <div style="padding:12px 16px; border-bottom:1px solid #f0f0f0; font-size:0.78rem; color:#333;">
+                <div>${n.message}</div>
+                <div style="font-size:0.65rem; color:#aaa; margin-top:3px;">${n.created_at}</div>
+            </div>
+        `).join('');
+    });
+}
+
+document.addEventListener('click', e => {
+    const p = document.getElementById('notifPanel');
+    if (!p.contains(e.target) && !e.target.closest('[onclick="toggleNotif()"]')) {
+        p.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
