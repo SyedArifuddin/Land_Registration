@@ -119,7 +119,16 @@
     <script>
         const pollAuth = setInterval(() => {
             fetch('/check_auth')
-                .then(res => res.json())
+                .then(async (res) => {
+                    const contentType = res.headers.get('content-type') || '';
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
+                    if (!contentType.includes('application/json')) {
+                        throw new Error('Non-JSON response from /check_auth');
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     if (data.status === 'success') {
                         clearInterval(pollAuth);
@@ -128,9 +137,16 @@
                         st.textContent = '✓ IDENTITY VERIFIED';
                         st.style.color = '#52c41a';
                         setTimeout(() => window.location.href = '/dashboard', 800);
+                    } else if (data.status === 'error') {
+                        throw new Error(data.message || 'auth_check_failed');
                     }
                 })
-                .catch(err => console.error('Sync Error:', err));
+                .catch(err => {
+                    console.error('Sync Error:', err);
+                    const st = document.getElementById('status-text');
+                    st.textContent = 'Auth service unavailable. Retrying...';
+                    st.style.color = '#ffb347';
+                });
         }, 2000);
     </script>
 </body>

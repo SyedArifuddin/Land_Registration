@@ -533,16 +533,23 @@ def resolve_dispute(dispute_id):
 
 @app.route('/check_auth')
 def check_auth():
-    conn = connect_db()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute("SELECT status, authenticated_user FROM qr_sync WHERE id=1")
-    row = cursor.fetchone()
-    conn.close()
-    if row and row['status'] == 'verified':
-        session['user'] = row['authenticated_user']
-        session['role'] = 'admin'
-        return jsonify({'status': 'success'})
-    return jsonify({'status': 'waiting'})
+    conn = None
+    try:
+        conn = connect_db()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("SELECT status, authenticated_user FROM qr_sync WHERE id=1")
+        row = cursor.fetchone()
+        if row and row['status'] == 'verified':
+            session['user'] = row['authenticated_user']
+            session['role'] = 'admin'
+            return jsonify({'status': 'success'})
+        return jsonify({'status': 'waiting'})
+    except Exception as e:
+        print(f"Check Auth Error: {e}")
+        return jsonify({'status': 'error', 'message': 'auth_check_failed'}), 500
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/scan/<device_id>', methods=['GET', 'POST'])
 def scan_endpoint(device_id):
