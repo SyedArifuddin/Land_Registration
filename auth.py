@@ -1,12 +1,28 @@
+import os
+from urllib.parse import unquote, urlparse
 import mysql.connector
 from mysql.connector import Error
 
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'Root@123',
-    'database': 'land_registry_db'
-}
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    parsed = urlparse(DATABASE_URL)
+    db_config = {
+        'host': parsed.hostname or 'localhost',
+        'user': unquote(parsed.username or 'root'),
+        'password': unquote(parsed.password or ''),
+        'database': parsed.path.lstrip('/') or 'land_registry_db',
+        'port': parsed.port or 3306,
+    }
+else:
+    db_config = {
+        'host': os.environ.get('DB_HOST', 'localhost'),
+        'user': os.environ.get('DB_USER', 'root'),
+        'password': os.environ.get('DB_PASSWORD', 'Root@123'),
+        'database': os.environ.get('DB_NAME', 'land_registry_db'),
+        'port': int(os.environ.get('DB_PORT', 3306)),
+    }
+
 
 def init_db():
     try:

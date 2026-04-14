@@ -1,0 +1,10 @@
+registry.db
+passwords.txt
+users.json
+templates - Shortcut.lnk
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+.DS_Store
