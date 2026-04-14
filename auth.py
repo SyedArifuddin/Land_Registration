@@ -1,4 +1,5 @@
 import os
+import socket
 from urllib.parse import urlparse
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -32,7 +33,35 @@ elif DATABASE_URL:
 
 def connect_db():
     if 'dsn' in db_config:
-        return psycopg2.connect(db_config['dsn'], sslmode=db_config.get('sslmode'))
+        dsn = db_config['dsn']
+        sslmode = db_config.get('sslmode')
+        try:
+            return psycopg2.connect(dsn, sslmode=sslmode)
+        except psycopg2.OperationalError as e:
+            # Some serverless environments fail on IPv6-only resolution; retry with IPv4.
+            if 'Cannot assign requested address' not in str(e):
+                raise
+
+            parsed = urlparse(dsn)
+            host = parsed.hostname
+            if not host:
+                raise
+
+            ipv4_info = socket.getaddrinfo(host, parsed.port or 5432, socket.AF_INET, socket.SOCK_STREAM)
+            if not ipv4_info:
+                raise
+
+            hostaddr = ipv4_info[0][4][0]
+            conn_kwargs = {
+                'dbname': (parsed.path or '/').lstrip('/'),
+                'user': parsed.username,
+                'password': parsed.password,
+                'host': host,
+                'hostaddr': hostaddr,
+                'port': parsed.port or 5432,
+                'sslmode': sslmode or 'require'
+            }
+            return psycopg2.connect(**conn_kwargs)
     return psycopg2.connect(**db_config)
 
 
