@@ -557,23 +557,29 @@ def scan_endpoint(device_id):
     if request.method == 'POST':
         user = request.form.get('username')
         pw   = request.form.get('password')
-        conn = connect_db()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        cursor.execute(
-            'SELECT * FROM users WHERE username=%s AND password=%s AND role=%s',
-            (user, pw, 'admin')
-        )
-        account = cursor.fetchone()
-        if account:
+        conn = None
+        try:
+            conn = connect_db()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
             cursor.execute(
-                "UPDATE qr_sync SET status='verified', authenticated_user=%s WHERE id=1",
-                (user,)
+                'SELECT * FROM users WHERE username=%s AND password=%s AND role=%s',
+                (user, pw, 'admin')
             )
-            conn.commit()
-            conn.close()
-            return "<h1>✅ VERIFIED</h1>"
-        conn.close()
-        return "<h1>❌ MISMATCH</h1>"
+            account = cursor.fetchone()
+            if account:
+                cursor.execute(
+                    "UPDATE qr_sync SET status='verified', authenticated_user=%s WHERE id=1",
+                    (user,)
+                )
+                conn.commit()
+                return "<h1>✅ VERIFIED</h1>"
+            return "<h1>❌ MISMATCH</h1>"
+        except Exception as e:
+            print(f"Scan Endpoint Error: {e}")
+            return "<h1>⚠️ AUTH SERVICE TEMPORARILY UNAVAILABLE</h1>", 503
+        finally:
+            if conn:
+                conn.close()
     return render_template('access.html', device_id=device_id)
 
 @app.route('/logout')
