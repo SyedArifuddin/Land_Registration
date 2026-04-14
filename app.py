@@ -469,7 +469,7 @@ def admin_notifications():
     """, (username,))
     notifs = cursor.fetchall()
     cursor.execute(
-        "UPDATE notifications SET is_read=1 WHERE recipient=%s AND role='admin'",
+        "UPDATE notifications SET is_read=TRUE WHERE recipient=%s AND role='admin'",
         (username,)
     )
     conn.commit()
@@ -487,7 +487,7 @@ def admin_unread_count():
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("""
         SELECT COUNT(*) as cnt FROM notifications
-        WHERE recipient=%s AND role='admin' AND is_read=0
+        WHERE recipient=%s AND role='admin' AND is_read=FALSE
     """, (username,))
     count = cursor.fetchone()['cnt']
     conn.close()

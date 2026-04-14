@@ -67,7 +67,7 @@ def dashboard():
     username = session.get('user')
     conn = connect_db()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute("SELECT COUNT(*) as cnt FROM notifications WHERE recipient=%s AND is_read=0", (username,))
+    cursor.execute("SELECT COUNT(*) as cnt FROM notifications WHERE recipient=%s AND is_read=FALSE", (username,))
     notif_count = cursor.fetchone()['cnt']
     cursor.execute("SELECT COUNT(*) as cnt FROM land_records WHERE pattadar=%s", (username,))
     my_property_count = cursor.fetchone()['cnt']
@@ -120,7 +120,7 @@ def audit_trail():
     for req in my_requests:
         cursor.execute("SELECT * FROM admin_messages WHERE request_id=%s ORDER BY created_at ASC", (req['id'],))
         req['messages'] = cursor.fetchall()
-    cursor.execute("SELECT COUNT(*) as cnt FROM notifications WHERE recipient=%s AND is_read=0", (username,))
+    cursor.execute("SELECT COUNT(*) as cnt FROM notifications WHERE recipient=%s AND is_read=FALSE", (username,))
     notif_count = cursor.fetchone()['cnt']
     conn.close()
     return render_template('citizen_audit.html',
@@ -286,7 +286,7 @@ def notifications():
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT * FROM notifications WHERE recipient=%s ORDER BY created_at DESC LIMIT 20", (username,))
     notifs = cursor.fetchall()
-    cursor.execute("UPDATE notifications SET is_read=1 WHERE recipient=%s", (username,))
+    cursor.execute("UPDATE notifications SET is_read=TRUE WHERE recipient=%s", (username,))
     conn.commit(); conn.close()
     for n in notifs: n['created_at'] = str(n['created_at'])
     return jsonify({'status':'ok','notifications':notifs})
