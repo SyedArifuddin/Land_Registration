@@ -82,19 +82,27 @@ def signup():
     if request.method == 'POST':
         user = request.form.get('username')
         pw   = request.form.get('password')
+        conn = None
         try:
             conn = connect_db()
             cursor = conn.cursor()
-            cursor.execute(
-                'INSERT INTO users (username, password, role) VALUES (%s, %s, %s)',
-                (user, pw, 'admin')
-            )
-            conn.commit()
-            conn.close()
-            flash("Account created! Please Sign In.")
-            return redirect(url_for('login_gate', role='admin'))
-        except Exception:
-            flash("Error: Username already exists.")
+            cursor.execute('SELECT 1 FROM users WHERE username=%s', (user,))
+            if cursor.fetchone():
+                flash("Error: Username already exists.")
+            else:
+                cursor.execute(
+                    'INSERT INTO users (username, password, role) VALUES (%s, %s, %s)',
+                    (user, pw, 'admin')
+                )
+                conn.commit()
+                flash("Account created! Please Sign In.")
+                return redirect(url_for('login_gate', role='admin'))
+        except Exception as e:
+            flash("Error creating account. Please try again.")
+            print(f"Signup Error: {e}")
+        finally:
+            if conn:
+                conn.close()
     return render_template('login.html', mode='signup')
 
 @app.route('/login', methods=['GET', 'POST'])
