@@ -215,8 +215,11 @@ def reports():
     cursor.execute("SELECT COUNT(*) as cnt FROM land_records")
     total_land = cursor.fetchone()['cnt']
 
-    # Total area registered
-    cursor.execute("SELECT SUM(extent) as total FROM land_records")
+    # Total area registered (extent is stored as text; extract numeric part safely)
+    cursor.execute("""
+        SELECT COALESCE(SUM((substring(extent from '[0-9]+(\\.[0-9]+)?'))::numeric), 0) as total
+        FROM land_records
+    """)
     total_area = cursor.fetchone()['total'] or 0
 
     # Transfer stats
@@ -241,7 +244,10 @@ def reports():
 
     # Land by category
     cursor.execute("""
-        SELECT land_category, COUNT(*) as cnt, SUM(extent) as area
+        SELECT
+            land_category,
+            COUNT(*) as cnt,
+            COALESCE(SUM((substring(extent from '[0-9]+(\\.[0-9]+)?'))::numeric), 0) as area
         FROM land_records
         GROUP BY land_category
     """)
@@ -249,7 +255,10 @@ def reports():
 
     # Top 5 citizens by property count
     cursor.execute("""
-        SELECT pattadar as owner_name, COUNT(*) as cnt, SUM(extent) as total_area
+        SELECT
+            pattadar as owner_name,
+            COUNT(*) as cnt,
+            COALESCE(SUM((substring(extent from '[0-9]+(\\.[0-9]+)?'))::numeric), 0) as total_area
         FROM land_records
         GROUP BY pattadar
         ORDER BY cnt DESC LIMIT 5
