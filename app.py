@@ -132,7 +132,8 @@ def login_gate():
             flash("Invalid Admin Credentials.")
 
     if role == 'admin':
-        return render_template('qr_scan.html', server_ip=get_my_ip())
+        scan_url = url_for('scan_endpoint', device_id='DEV-HYD-99', _external=True)
+        return render_template('qr_scan.html', scan_url=scan_url, server_host=request.host)
     return render_template('login.html', mode='login')
 
 @app.route('/dashboard')

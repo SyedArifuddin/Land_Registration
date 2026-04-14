@@ -99,7 +99,7 @@
         
 
         <div class="qr-wrapper">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=http://{{ server_ip }}:5000/scan/DEV-HYD-99"
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ scan_url|urlencode }}"
                  alt="Secure Token" width="180" height="180">
         </div>
 
@@ -108,7 +108,7 @@
             <span class="status-text" id="status-text">Waiting for Encrypted Sync</span>
         </div>
 
-        <div class="ip-info">Your IP: {{ server_ip }} &nbsp;|&nbsp; Node: TS-HYD-01</div>
+        <div class="ip-info">Server: {{ server_host }} &nbsp;|&nbsp; Node: TS-HYD-01</div>
 
         <div class="divider"></div>
         <p class="scan-hint">
