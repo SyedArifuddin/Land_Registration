@@ -5,6 +5,16 @@ from blockchain_config import land_chain
 import datetime
 import hashlib
 import json
+import re
+
+def get_total_area(assets):
+    total = 0.0
+    for a in assets:
+        ext = str(a.get('extent') or '0')
+        match = re.search(r'[0-9]+(\.[0-9]+)?', ext)
+        if match:
+            total += float(match.group())
+    return total
 
 citizen_bp = Blueprint('citizen', __name__, url_prefix='/citizen')
 
@@ -97,7 +107,8 @@ def my_properties():
         cursor.execute("SELECT * FROM land_records WHERE pattadar=%s", (session.get('user'),))
         assets = cursor.fetchall(); conn.close()
     except Exception as e: print(f"Error: {e}")
-    return render_template('citizen_properties.html', user=session.get('user'), assets=assets)
+    total_area = get_total_area(assets)
+    return render_template('citizen_properties.html', user=session.get('user'), assets=assets, total_area=total_area)
 
 # ─── AUDIT / TRANSFER REQUESTS ─────────────────────────────────
 
@@ -215,7 +226,8 @@ def taxation():
         cursor.execute("SELECT * FROM land_records WHERE pattadar=%s", (session.get('user'),))
         assets = cursor.fetchall(); conn.close()
     except Exception as e: print(f"Error: {e}")
-    return render_template('citizen_taxation.html', user=session.get('user'), assets=assets)
+    total_area = get_total_area(assets)
+    return render_template('citizen_taxation.html', user=session.get('user'), assets=assets, total_area=total_area)
 
 # ─── REQUEST TRANSFER ──────────────────────────────────────────
 

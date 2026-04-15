@@ -18,7 +18,6 @@
         <div class="stat-card gold">
             <small>Total Area</small>
             <h4 style="font-size:1.1rem;">
-                {% set total_area = assets|sum(attribute='extent') %}
                 {{ "{:,.2f}".format(total_area|float) }} sq.ft
             </h4>
         </div>

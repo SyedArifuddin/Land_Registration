@@ -26,8 +26,7 @@
         <div class="stat-card green">
             <small>Cumulative Surface Area</small>
             <h4>
-                {% set total = assets|sum(attribute='extent') %}
-                {{ "{:,.2f}".format(total|float) }}
+                {{ "{:,.2f}".format(total_area|float) }}
                 <span style="font-size:0.75rem; color:#888;">sq.ft</span>
             </h4>
         </div>
